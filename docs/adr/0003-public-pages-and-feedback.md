@@ -109,3 +109,11 @@ Known limits we accept:
 - **Pure server form with errors in the URL.** Works without JavaScript, but typed free text would end up in URLs and logs. Rejected, kept only as the fallback in decision 8.
 - **Reading SKU content from the database.** One source of truth, but the page breaks when the database does. Rejected (finding 7).
 - **Redact nothing, rely on the hint.** Simplest, but one email address in a live demo breaks a SPEC criterion. Rejected.
+
+## Amendment 1 (2026-11-26): real links to the brand's site
+
+The Dark 92% page (reached from `d92-at`, the presentation code) now links "Shop" to
+https://www.fairafric.com/en/products/92-organic-dark-chocolate. Links live in `lib/brandLinks.ts`, are https on
+fairafric.com only, open in a new tab with `noopener noreferrer`, and embed nothing, so no video is hosted and no
+third-party request is made by the page. "Watch the story" becomes a link the same way once the video URL is known.
+Other bars keep their labelled demo buttons. Tests: `tests/unit/brandLinks.spec.ts`.

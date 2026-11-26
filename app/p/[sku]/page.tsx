@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { DemoButton } from '@/components/DemoButton'
 import { ProductImage } from '@/components/ProductImage'
+import { brandLinksFor } from '@/lib/brandLinks'
 import { skuById } from '@/lib/catalog'
 import { cleanParams, linkQuery } from '@/lib/params'
 import { trackPageView } from '@/lib/recordPageView'
@@ -28,6 +29,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
 
   await trackPageView({ page: 'product', sku_id: sku.id, campaign_id: p.campaign, market: p.market })
 
+  const links = brandLinksFor(sku.id)
   const feedbackHref = `/f/${sku.id}?${linkQuery({ sku: sku.id }, p)}`
   return (
     <main className="mx-auto flex max-w-md flex-col gap-6 px-5 py-8">
@@ -49,9 +51,36 @@ export default async function ProductPage({ params, searchParams }: Props) {
         >
           Give feedback
         </a>
-        <DemoButton label="Shop" note="Demo: links to the brand's own shop in the pilot." highlight={intentShop} />
-        <DemoButton label="Watch the story" note="Demo: the video stays on the brand's own site." />
+        {links.shop ? (
+          <BrandLink href={links.shop} label="Shop" note="Opens fairafric.com." highlight={intentShop} />
+        ) : (
+          <DemoButton label="Shop" note="Demo: links to the brand's own shop in the pilot." highlight={intentShop} />
+        )}
+        {links.story ? (
+          <BrandLink href={links.story} label="Watch the story" note="The video plays on fairafric's own site." />
+        ) : (
+          <DemoButton label="Watch the story" note="Demo: the video stays on the brand's own site." />
+        )}
       </div>
     </main>
+  )
+}
+
+// Outbound link to the brand's own site: no referrer, no opener, nothing embedded (ADR 0003, amendment 1).
+function BrandLink({ href, label, note, highlight = false }: { href: string; label: string; note: string; highlight?: boolean }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        referrerPolicy="no-referrer"
+        data-testid="brand-link"
+        className={`flex min-h-12 items-center justify-center rounded-xl px-4 py-3 text-base font-semibold ring-1 ring-inset ${highlight ? 'bg-gold text-night ring-gold' : 'bg-surface text-ink ring-line'}`}
+      >
+        {label}
+      </a>
+      <p className="px-1 text-xs text-ink-tertiary">{note}</p>
+    </div>
   )
 }
