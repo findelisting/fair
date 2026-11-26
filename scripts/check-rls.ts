@@ -1,86 +1,151 @@
-// npm run check:rls: proves the public (publishable/anon) key can read and write nothing.
+// npm run check:rls: proves the public roles (anon, authenticated) can read and write nothing.
 //
-// A check only passes when Postgres itself refuses: error code 42501 (permission denied).
-// Any other error (invalid key, network, missing function) proves nothing, so it fails the run
-// as "inconclusive". This stops a broken key from looking like a locked-down database.
+// It connects with SUPABASE_DB_URL (the same connection db:push uses) and needs no API key, so key
+// rotation never breaks it. Two kinds of check:
+//
+// Every table and function in the public schema is discovered from the catalogue, so anything a later
+// migration adds is checked automatically (nothing to keep in sync by hand).
+//
+// 1. Catalogue: every table has row-level security on and no policies; the public roles hold no
+//    table privileges and cannot execute any function.
+// 2. Behaviour: inside ONE transaction, switch to each public role and actually try a read of every
+//    table, a write, a delete and a call of every function (with NULL arguments; the permission check
+//    comes before the function body). Each attempt must fail with 42501 (permission denied). The transaction is
+//    always rolled back at the end, so even a leak would write nothing, which is why reset_demo can be
+//    tried safely here.
+//
+// The database password never appears in the output.
 import './env'
-import { createClient } from '@supabase/supabase-js'
-import { assertDemoProject } from '../lib/demoProject'
+import postgres from 'postgres'
+import { assertDemoProject, dbUrlMatchesProject, normalizeDbUrl } from '../lib/demoProject'
 import { requireEnv } from './env'
 
-const TABLES = [
-  'markets', 'collections', 'skus', 'collection_skus', 'campaigns', 'codes',
-  'scan_events', 'page_views', 'feedback', 'web_aggregates',
-]
+const PUBLIC_ROLES = ['anon', 'authenticated'] as const
 const PERMISSION_DENIED = '42501'
+
+
+class Rollback extends Error {}
 
 type Result = 'blocked' | 'leak' | 'inconclusive'
 
-function judge(error: { code?: string; message?: string } | null, gotData: boolean): { result: Result; note: string } {
-  if (!error) return gotData ? { result: 'leak', note: 'LEAK: rows returned or call accepted' } : { result: 'leak', note: 'LEAK: no permission error' }
-  if (error.code === PERMISSION_DENIED) return { result: 'blocked', note: `blocked (${PERMISSION_DENIED})` }
-  return { result: 'inconclusive', note: `INCONCLUSIVE (${error.code ?? 'no code'}: ${(error.message ?? '').slice(0, 60)})` }
-}
-
 async function main() {
+  let ref: string
   try {
-    assertDemoProject()
+    ref = assertDemoProject()
   } catch (e) {
     console.error((e as Error).message)
     process.exitCode = 1
     return
   }
-  const url = requireEnv('SUPABASE_URL')
-  const key = requireEnv('SUPABASE_PUBLISHABLE_KEY')
-
-  // The key itself must be valid, otherwise every check below would "fail closed" for the wrong reason.
-  const probe = await fetch(`${url.replace(/\/$/, '')}/rest/v1/`, { headers: { apikey: key } })
-  if (probe.status === 401) {
-    console.error('SUPABASE_PUBLISHABLE_KEY is rejected by the project ("Invalid API key"). Copy the current publishable key from Project Settings -> API Keys.')
+  const normalized = normalizeDbUrl(requireEnv('SUPABASE_DB_URL'))
+  if (!normalized || !dbUrlMatchesProject(normalized.url, ref)) {
+    console.error(`Refusing to run: SUPABASE_DB_URL is not a valid connection string for the demo project "${ref}".`)
     process.exitCode = 1
     return
   }
 
-  const publicClient = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
+  const sql = postgres(normalized.url, { max: 1, prepare: false, ssl: 'require', onnotice: () => {} })
   const results: Result[] = []
-  const report = (label: string, r: { result: Result; note: string }) => {
-    results.push(r.result)
-    console.log(`${label.padEnd(24)} ${r.note}`)
+  const report = (label: string, result: Result, note: string) => {
+    results.push(result)
+    console.log(`${label.padEnd(48)} ${note}`)
   }
 
-  for (const table of TABLES) {
-    const { data, error } = await publicClient.from(table).select('*').limit(1)
-    report(`read  ${table}`, judge(error, (data?.length ?? 0) > 0))
-  }
+  try {
+    // Discover every table and every non-extension function in the public schema.
+    const TABLES = (
+      await sql<{ relname: string }[]>`
+        select c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace
+        where n.nspname = 'public' and c.relkind in ('r', 'p') order by c.relname`
+    ).map((r) => r.relname)
+    const FUNCTIONS = await sql<{ oid: number; proname: string; args: string[] }[]>`
+      select p.oid::int as oid, p.proname,
+             coalesce(array(select format_type(t, null) from unnest(p.proargtypes) as t), '{}') as args
+      from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname = 'public' and p.prokind = 'f'
+        and not exists (select 1 from pg_depend d where d.objid = p.oid and d.deptype = 'e')
+      order by p.proname`
+    console.log(`Found ${TABLES.length} tables and ${FUNCTIONS.length} functions in the public schema.
+`)
+    if (TABLES.length === 0) report('tables', 'inconclusive', 'INCONCLUSIVE (no tables found)')
 
-  const insert = await publicClient.from('feedback').insert({ sku_id: 'dark-92', rating: 5, taste_note: 'rls-check' })
-  report('write feedback', judge(insert.error, true))
+    // 1. Catalogue checks (as the connecting owner role).
+    const rls = await sql<{ relname: string; rls: boolean; forced: boolean }[]>`
+      select c.relname, c.relrowsecurity as rls, c.relforcerowsecurity as forced
+      from pg_class c join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'public' and c.relname = any(${TABLES})`
+    for (const t of TABLES) {
+      const row = rls.find((r) => r.relname === t)
+      if (!row) report(`rls   ${t}`, 'inconclusive', 'INCONCLUSIVE (table not found)')
+      else report(`rls   ${t}`, row.rls && row.forced ? 'blocked' : 'leak', row.rls && row.forced ? 'on (forced)' : 'LEAK: row-level security off')
+    }
 
-  // Only functions whose call would do no harm even if it got through: seed_demo with an empty
-  // payload upserts nothing, and record_scan with p_record = false writes nothing.
-  // reset_demo is deliberately NOT called: if its grants were ever wrong, the check itself would
-  // wipe the demo. It carries the same revoke/grant statements as seed_demo, which is checked here.
-  const calls: [string, Record<string, unknown>][] = [
-    ['seed_demo', { payload: {} }],
-    ['record_scan', { p_code: 'd92-at', p_record: false, p_device: 'unknown', p_language: null, p_is_bot: true }],
-    // Read-only agent functions (ADR 0006).
-    ['agent_scans_by_code', { p_market: 'AT' }],
-    ['agent_feedback_visits_by_campaign', {}],
-    ['agent_themes_for_sku', { p_sku: 'dark-92' }],
-  ]
-  for (const [fn, args] of calls) {
-    const { error } = await publicClient.rpc(fn, args)
-    report(`call  ${fn}`, judge(error, true))
+    const policies = await sql<{ n: number }[]>`
+      select count(*)::int as n from pg_policies where schemaname = 'public' and tablename = any(${TABLES})`
+    report('policies on demo tables', policies[0].n === 0 ? 'blocked' : 'leak', policies[0].n === 0 ? 'none' : `LEAK: ${policies[0].n} policies`)
+
+    const grants = await sql<{ grantee: string; table_name: string; privilege_type: string }[]>`
+      select grantee, table_name, privilege_type from information_schema.role_table_grants
+      where table_schema = 'public' and table_name = any(${TABLES}) and grantee = any(${[...PUBLIC_ROLES, 'PUBLIC']})`
+    report('table grants to public roles', grants.length === 0 ? 'blocked' : 'leak',
+      grants.length === 0 ? 'none' : `LEAK: ${grants.map((g) => `${g.grantee}:${g.privilege_type} ${g.table_name}`).join(', ')}`)
+
+    for (const f of FUNCTIONS) {
+      const [priv] = await sql<{ anon: boolean; auth: boolean }[]>`
+        select has_function_privilege('anon', ${f.oid}::oid, 'execute') as anon,
+               has_function_privilege('authenticated', ${f.oid}::oid, 'execute') as auth`
+      const ok = !priv.anon && !priv.auth
+      report(`exec  ${f.proname}`, ok ? 'blocked' : 'leak', ok ? 'no public execute' : 'LEAK: public roles can execute')
+    }
+
+    // 2. Behaviour checks, inside one transaction that is always rolled back.
+    try {
+      await sql.begin(async (tx) => {
+        for (const role of PUBLIC_ROLES) {
+          await tx.unsafe(`set local role ${role}`)
+          const attempt = async (label: string, statement: string) => {
+            try {
+              await tx.savepoint(async (sp) => {
+                await sp.unsafe(statement)
+              })
+              report(`${role.padEnd(13)} ${label}`, 'leak', 'LEAK: allowed')
+            } catch (e) {
+              const code = (e as { code?: string }).code
+              if (code === PERMISSION_DENIED) report(`${role.padEnd(13)} ${label}`, 'blocked', `blocked (${PERMISSION_DENIED})`)
+              else report(`${role.padEnd(13)} ${label}`, 'inconclusive', `INCONCLUSIVE (${code ?? 'no code'})`)
+            }
+          }
+          for (const t of TABLES) await attempt(`read ${t}`, `select * from public.${t} limit 1`)
+          await attempt('write feedback', `insert into public.feedback (sku_id, rating, taste_note) values ('dark-92', 5, 'rls-check')`)
+          await attempt('delete scan_events', `delete from public.scan_events`)
+          for (const f of FUNCTIONS) {
+            const args = f.args.map((t) => `null::${t}`).join(', ')
+            await attempt(`call ${f.proname}`, `select public.${f.proname}(${args})`)
+          }
+          await tx.unsafe('reset role')
+        }
+        throw new Rollback('always roll back')
+      })
+    } catch (e) {
+      if (!(e instanceof Rollback)) throw e
+    }
+  } catch (e) {
+    const msg = (e instanceof Error ? e.message : String(e)).split(normalized.password).join('****')
+    console.error(`Could not run the check: ${msg}`)
+    process.exitCode = 1
+    return
+  } finally {
+    await sql.end({ timeout: 5 })
   }
 
   const leaks = results.filter((r) => r === 'leak').length
   const unclear = results.filter((r) => r === 'inconclusive').length
   if (leaks || unclear) {
-    console.error(`\n${leaks} leak(s), ${unclear} inconclusive check(s). Every check must be refused with ${PERMISSION_DENIED}.`)
+    console.error(`\n${leaks} leak(s), ${unclear} inconclusive check(s). Every check must pass.`)
     process.exitCode = 1
     return
   }
-  console.log(`\nOK: all ${results.length} checks refused with permission denied (${PERMISSION_DENIED}).`)
+  console.log(`\nOK: all ${results.length} checks passed. The public roles can read and write nothing (all attempts rolled back).`)
 }
 
 main()

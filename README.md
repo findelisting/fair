@@ -43,8 +43,7 @@ Set in `.env.local` (local) and in Vercel **production** settings (deploy). All 
 | `SUPABASE_URL` | Demo project URL | App, scripts, tests |
 | `SUPABASE_SERVICE_ROLE_KEY` | Secret key (`sb_secret_...`) | App, scripts, tests |
 | `DEMO_SUPABASE_PROJECT_ID` | Project ref; scripts refuse to run if it does not match `SUPABASE_URL` | Scripts, tests |
-| `SUPABASE_DB_URL` | Session pooler connection string (not the direct `db.<ref>` host) | `npm run db:push` only, local |
-| `SUPABASE_PUBLISHABLE_KEY` | Public key, used only to prove it can read nothing | `npm run check:rls` |
+| `SUPABASE_DB_URL` | Session pooler connection string (not the direct `db.<ref>` host) | `npm run db:push` and `npm run check:rls`, local only |
 | `PUBLIC_BASE_URL` | Public origin, e.g. `https://fairafric-demo.thefindeapp.com` | QR codes and redirects |
 | `DEMO_DASHBOARD_PASSWORD`, `DEMO_SESSION_SECRET` | Dashboard gate | Pending slice 4 |
 
@@ -68,7 +67,7 @@ Printable QR sheet: `http://localhost:3000/dashboard/codes` (dev only until the 
 |---|---|
 | `npm run seed` | Upserts the catalogue (SKUs, collection, markets, campaigns, codes), then replaces all synthetic rows with fresh history ending today (Europe/Berlin). Live scans and feedback are kept. Safe to run more than once |
 | `npm run reset` | Deletes **all** demo data, live included, then seeds again. Use before a demo |
-| `npm run check:rls` | Proves the public key can read no table |
+| `npm run check:rls` | Proves the public roles (`anon`, `authenticated`) can read, write and call nothing: checks every table and function, all inside a transaction that is rolled back |
 
 Synthetic data ages: its last day is the day you seed. Reset the day before a demo.
 

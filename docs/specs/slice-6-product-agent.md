@@ -154,5 +154,5 @@ One source per data question, plus one per retailer listing for the fourth:
 ## 10. Done when
 
 - All tests in section 7 pass, plus all existing tests.
-- `npm run typecheck`, `npm run lint`, `npm run build` pass; `npm run check:rls` passes once the publishable key is fixed.
+- `npm run typecheck`, `npm run lint`, `npm run build` pass; `npm run check:rls` passes (it now tests the public roles over the database connection; no publishable key needed).
 - No test data remains in the demo database.
