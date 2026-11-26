@@ -117,3 +117,7 @@ https://www.fairafric.com/en/products/92-organic-dark-chocolate. Links live in `
 fairafric.com only, open in a new tab with `noopener noreferrer`, and embed nothing, so no video is hosted and no
 third-party request is made by the page. "Watch the story" becomes a link the same way once the video URL is known.
 Other bars keep their labelled demo buttons. Tests: `tests/unit/brandLinks.spec.ts`.
+
+Update (same day): the shop link is https://www.fairafricghana.com/products/92-dark-chocolate and "Watch the story"
+links to https://www.youtube.com/watch?v=UtMBaHedmek. Allowed hosts: fairafric.com, fairafricghana.com, youtube.com
+(`BRAND_HOSTS`). The video is a link, never an embed: no YouTube request is made by our page.

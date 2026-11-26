@@ -7,7 +7,7 @@ The automated part runs in `npm run test:unit` and `npm run test:e2e` (ADR 0008)
 - [ ] Banner "Demo prototype, synthetic data" visible at the top, on phone and laptop.
 
 ## Product, collection and feedback pages (phone)
-- [ ] Dark 92%: "Shop" opens fairafric.com in a new tab. Note under it says "Opens fairafric.com."
+- [ ] Dark 92%: "Shop" opens fairafricghana.com/products/92-dark-chocolate and "Watch the story" opens the YouTube video, both in a new tab. Nothing plays inside the demo.
 - [ ] Other bars: "Shop" and "Watch the story" are demo buttons with a "Demo:" note.
 - [ ] Feedback form asks only rating, taste note and optional free text. No name, email or phone.
 - [ ] Thank-you page appears after sending.

@@ -52,12 +52,12 @@ export default async function ProductPage({ params, searchParams }: Props) {
           Give feedback
         </a>
         {links.shop ? (
-          <BrandLink href={links.shop} label="Shop" note="Opens fairafric.com." highlight={intentShop} />
+          <BrandLink href={links.shop} label="Shop" note="Opens fairafric's own shop." highlight={intentShop} />
         ) : (
           <DemoButton label="Shop" note="Demo: links to the brand's own shop in the pilot." highlight={intentShop} />
         )}
         {links.story ? (
-          <BrandLink href={links.story} label="Watch the story" note="The video plays on fairafric's own site." />
+          <BrandLink href={links.story} label="Watch the story" note="Opens fairafric's video on YouTube." />
         ) : (
           <DemoButton label="Watch the story" note="Demo: the video stays on the brand's own site." />
         )}

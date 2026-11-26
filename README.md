@@ -57,7 +57,7 @@ npm run dev       # http://localhost:3000
 
 Dashboard: `http://localhost:3000/dashboard`, sign in with `DEMO_DASHBOARD_PASSWORD`. Product and collection views, market and campaign filters, numbers refresh every 5 seconds, and the product agent with four prepared questions.
 
-The Dark 92% page links "Shop" to fairafric.com (`lib/brandLinks.ts`). Other bars show labelled demo buttons.
+The Dark 92% page links "Shop" to fairafric's shop and "Watch the story" to their YouTube video (`lib/brandLinks.ts`). Other bars show labelled demo buttons.
 
 Try a code: open `http://localhost:3000/r/d92-at`. It records a scan and redirects to the Dark 92% product page.
 

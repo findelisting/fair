@@ -20,7 +20,7 @@ Show nothing yet. Hold up the printed bar or the QR sheet.
 
 1. Scan code **d92-at** (Dark 92%, wrapper, Austria) with the phone.
 2. Point out: the page opened with the product, campaign and market in the address (`?sku=dark-92&campaign=wrapper-2026&market=AT`).
-3. Show the product page: banner "Demo prototype, synthetic data", "Shop" opens the real Dark 92% page on fairafric.com in a new tab. "Watch the story" opens fairafric's video on YouTube once the link is added; no video is hosted here. Other bars show labelled demo buttons.
+3. Show the product page: banner "Demo prototype, synthetic data", "Shop" opens the real Dark 92% page on fairafricghana.com and "Watch the story" opens fairafric's video on YouTube, both in a new tab; no video is hosted here. Other bars show labelled demo buttons.
 4. Scan **fb-d92** (feedback form). Submit a rating, a taste note, and optionally a short comment. Point out: no name, no email, no account.
 
 ## 3. Dashboard (3 min)
