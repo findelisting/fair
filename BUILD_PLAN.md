@@ -229,7 +229,7 @@ Done when:
 Tasks:
 - `data/competitors.json` holds one or two products. Each has the product, retailer, price, pack size, packaging note, source URL and access date.
 - The loader rejects any entry without a source URL and date. Unit test for this.
-- Until the values are checked by hand, they show as "Placeholder, to be verified".
+- Researched values are shown as they are, with source and date. No human review step for the demo (ADR 0001); review guardrails come with the pilot.
 - `data/hypotheses.json` holds two or three hypotheses, each with a statement and its data basis.
 - Both are panels on the dashboard. Every hypothesis carries a `HypothesisLabel`.
 
@@ -317,4 +317,4 @@ Review with the team at each checkpoint before the next slice.
 | DNS record for `fairafric-demo.thefindeapp.com` | Slice 0 (before printing in slice 8) | Subdomain confirmed; DNS record still to add |
 | Real SKU names | Slice 1 | 92% bar and two vegan Creamy bars, with generic names |
 | Cleared product photos | Slice 3 | Neutral placeholder images |
-| Competitor products | Slice 7 | Placeholders marked "to be verified" |
+| Competitor products | Slice 7 | Researched by Claude, shown with source and date, no review step (ADR 0001) |

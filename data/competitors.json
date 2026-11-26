@@ -1,0 +1,44 @@
+{
+  "products": [
+    {
+      "id": "lindt-excellence-90",
+      "brand": "Lindt",
+      "product": "Excellence Mild 90% Cacao",
+      "market": "DE",
+      "comparesTo": "dark-92",
+      "sources": {
+        "knuspr": {
+          "publisher": "Knuspr (online grocer, DE)",
+          "url": "https://www.knuspr.de/52660-lindt-excellence-mild-90",
+          "accessedOn": "2026-11-26"
+        }
+      },
+      "values": [
+        { "label": "Price", "value": "€5.09", "source": "knuspr" },
+        { "label": "Pack size", "value": "100 g", "source": "knuspr" },
+        { "label": "Price per kg", "value": "€50.90", "source": "knuspr" },
+        { "label": "Cocoa", "value": "90%", "source": "knuspr" }
+      ]
+    },
+    {
+      "id": "vivani-dattelsuesse-60",
+      "brand": "Vivani",
+      "product": "Zartbitter Dattelsüße 60%",
+      "market": "DE",
+      "comparesTo": "creamy-oat",
+      "sources": {
+        "dm": {
+          "publisher": "dm-drogerie markt (DE)",
+          "url": "https://www.dm.de/p/d/3154081/",
+          "accessedOn": "2026-11-26"
+        }
+      },
+      "values": [
+        { "label": "Price", "value": "€3.95", "source": "dm" },
+        { "label": "Pack size", "value": "80 g", "source": "dm" },
+        { "label": "Price per kg", "value": "€49.38", "source": "dm" },
+        { "label": "Cocoa", "value": "60%", "source": "dm" }
+      ]
+    }
+  ]
+}
