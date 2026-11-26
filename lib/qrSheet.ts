@@ -80,7 +80,8 @@ export async function buildSheet(base: string, logoHref: string | null = null): 
         campaign: campaigns.get(c.campaign_id) ?? c.campaign_id,
         market: markets.get(c.market) ?? c.market,
         active: c.status === 'active',
-        svg: withLogo(await qrSvg(url), logoHref),
+        // Plain code by default (ADR 0004, amendment 1). The centre logo is added only when the client sends a logo file.
+        svg: logoHref ? withLogo(await qrSvg(url), logoHref) : await qrSvg(url),
       }
     }),
   )

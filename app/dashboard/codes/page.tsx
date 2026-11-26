@@ -47,8 +47,8 @@ export default async function CodesSheet() {
       )}
 
       {!hasLogo && (
-        <p className="mb-4 text-xs text-ink-tertiary print:hidden">
-          Logo placeholder in use. Add the official file at <code>public{LOGO_PUBLIC_PATH}</code>.
+        <p data-testid="logo-offer" className="mb-4 text-sm text-ink-secondary print:hidden">
+          Want your logo in the centre of each code? Upload your logo file and we add it to every code.
         </p>
       )}
 

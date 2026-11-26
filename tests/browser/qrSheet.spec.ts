@@ -6,7 +6,7 @@ test.skip(!!process.env.E2E_BASE_URL, 'The QR sheet is dev-only until slice 4')
 
 const JSQR = path.join(process.cwd(), 'node_modules', 'jsqr', 'dist', 'jsQR.js')
 
-test('every rendered code, logo pad included, decodes to its exact URL', async ({ page }) => {
+test('every rendered code decodes to its exact URL', async ({ page }) => {
   const res = await page.goto('/dashboard/codes')
   expect(res?.headers()['set-cookie']).toBeUndefined()
   await page.addScriptTag({ path: JSQR })
@@ -38,7 +38,8 @@ test('every rendered code, logo pad included, decodes to its exact URL', async (
       return result?.data ?? null
     }, png)
     expect(decoded, `code ${i} should decode`).toBe(expected)
-    await expect(card.locator('[data-logo]')).toHaveCount(1)
+    // Plain codes until the client uploads a logo (ADR 0004, amendment 1).
+    await expect(card.locator('[data-logo]')).toHaveCount(0)
   }
 })
 
@@ -50,6 +51,7 @@ test('cards show call to action, label, Demo only; dev URL shows the warning', a
   await expect(first).toContainText('d92-at')
   await expect(page.getByTestId('base-url-warning')).toContainText('Not print-ready')
   await expect(page.getByTestId('print-ready')).toHaveCount(0)
+  await expect(page.getByTestId('logo-offer')).toContainText('Upload your logo')
   await expect(page.getByText('Demo prototype, synthetic data').first()).toBeVisible()
 })
 

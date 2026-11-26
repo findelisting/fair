@@ -45,3 +45,7 @@ We chose A: printing codes from the dashboard is part of Finde's story, and the 
 - Two new packages: `qrcode` (runtime) and `jsqr` (development only).
 - The real logo must come from fairafric or their press kit before printing for the demo.
 - Slice 4 adds `/dashboard/codes` to the password gate and removes the dev-only guard.
+
+## Amendment 1 (2026-11-26): plain codes, logo on request
+
+The Claude Design QR designs were not good enough. Decision: the sheet prints plain, standard QR codes (black on white, level H, 4-module quiet zone). No logo placeholder is shown. A screen-only note tells the client they can upload their logo; once a logo file is placed at `public/brand/fairafric-logo.svg`, it is added in the centre with the same 20% limit and the decode test still applies. Level H stays, so adding a logo later needs no other change.

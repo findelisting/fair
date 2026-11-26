@@ -9,7 +9,7 @@ Implements [ADR 0004](../adr/0004-qr-sheet.md).
 | Q-1 | `/dashboard/codes` lists one card per code in `lib/catalog.ts`, in catalogue order |
 | Q-2 | Each code encodes exactly `${PUBLIC_BASE_URL}/r/${code}`, with no trailing slash doubling and no query string |
 | Q-3 | Codes use error correction level `H` and a 4-module quiet zone, rendered as inline SVG |
-| Q-4 | A logo sits in the centre on a white pad, no wider than 20% of the code. Until `public/brand/fairafric-logo.svg` exists, a neutral placeholder marked "Logo" is used |
+| Q-4 | Plain black-on-white codes by default, with a screen-only note offering to add the client's logo. Only when `public/brand/fairafric-logo.svg` exists does a logo sit in the centre on a white pad, no wider than 20% of the code (amendment 1 of ADR 0004) |
 | Q-5 | Each card shows a call to action above, and below: label, campaign, market and code. Each card says "Demo only". Inactive codes are greyed out and say "Inactive" |
 | Q-6 | Base URL: `PUBLIC_BASE_URL`, or in dev when unset, the request's own origin. Check: `ok` only for `https` and not `localhost`, `127.0.0.1` or `*.vercel.app`. Otherwise a warning banner "Not print-ready: these codes point to a test address." and no print-ready mark. Missing or unparsable URL is `invalid` |
 | Q-7 | Print: A4, codes 35 mm wide, cut guides, black on white, `print-color-adjust: exact`. Screen-only controls hidden in print |
