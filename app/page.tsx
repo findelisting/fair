@@ -1,8 +1,9 @@
+import Link from 'next/link'
 import { DataBadge } from '@/components/DataBadge'
 import { HypothesisLabel } from '@/components/HypothesisLabel'
 
-// Placeholder home page for slice 1. Later slices add the product, collection,
-// feedback and dashboard pages.
+// Demo landing page. The dashboard link leads to the password gate, which
+// returns the visitor to /dashboard after sign-in.
 export default function Home() {
   return (
     <main className="mx-auto flex max-w-2xl flex-col gap-6 px-6 py-16">
@@ -19,6 +20,15 @@ export default function Home() {
         <DataBadge kind="live" />
         <DataBadge kind="synthetic" />
         <HypothesisLabel />
+      </div>
+      <div>
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center justify-center rounded-lg bg-green px-4 py-2 font-semibold text-white hover:bg-green-deep"
+        >
+          Open the dashboard
+        </Link>
+        <p className="mt-2 text-sm text-ink-secondary">The dashboard asks for the demo password.</p>
       </div>
     </main>
   )
