@@ -2,7 +2,7 @@
 
 A clickable sales demo: a QR code on the pack opens a product page, every scan and feedback answer is recorded per SKU, campaign and market, and a dashboard with a product agent shows what the data says. It is a prototype for a sales conversation, not production software. Scope: [SPEC.md](SPEC.md). Plan: [BUILD_PLAN.md](BUILD_PLAN.md). Decisions: [docs/adr](docs/adr).
 
-> Status (2026-11-26): slices 0 to 3, 5, 7 and 8 are built. The dashboard (slice 4) and the product agent (slice 6) are in progress. Sections that depend on them say "pending".
+> Status (2026-11-26): slices 0 to 8, 10 and 11 are built. Slice 12 (launch and dry run) is done together with the team.
 
 ## Stack
 
@@ -45,7 +45,7 @@ Set in `.env.local` (local) and in Vercel **production** settings (deploy). All 
 | `DEMO_SUPABASE_PROJECT_ID` | Project ref; scripts refuse to run if it does not match `SUPABASE_URL` | Scripts, tests |
 | `SUPABASE_DB_URL` | Session pooler connection string (not the direct `db.<ref>` host) | `npm run db:push` and `npm run check:rls`, local only |
 | `PUBLIC_BASE_URL` | Public origin, e.g. `https://fairafric-demo.thefindeapp.com` | QR codes and redirects |
-| `DEMO_DASHBOARD_PASSWORD`, `DEMO_SESSION_SECRET` | Dashboard gate | Pending slice 4 |
+| `DEMO_DASHBOARD_PASSWORD`, `DEMO_SESSION_SECRET` | Dashboard gate. Password at least a few words or random; secret at least 16 characters. Use different values in Vercel than locally | App |
 
 ## Run
 
@@ -55,11 +55,15 @@ npm run seed      # catalogue + synthetic history
 npm run dev       # http://localhost:3000
 ```
 
+Dashboard: `http://localhost:3000/dashboard`, sign in with `DEMO_DASHBOARD_PASSWORD`. Product and collection views, market and campaign filters, numbers refresh every 5 seconds, and the product agent with four prepared questions.
+
+The Dark 92% page links "Shop" to fairafric.com (`lib/brandLinks.ts`). Other bars show labelled demo buttons.
+
 Try a code: open `http://localhost:3000/r/d92-at`. It records a scan and redirects to the Dark 92% product page.
 
 Demo codes (fixed, survive every reset): `d92-at`, `oat-de`, `haz-ch`, `fb-d92` (feedback form), `vc-de` (collection).
 
-Printable QR sheet: `http://localhost:3000/dashboard/codes` (dev only until the dashboard gate exists). Codes printed from localhost point nowhere for others; print from the deployed URL. To put a logo in the centre of the codes, save the client's file as `public/brand/fairafric-logo.svg`.
+Printable QR sheet: `/dashboard/codes`, behind the dashboard password. Codes printed from localhost point nowhere for others; print from the deployed URL. To put a logo in the centre of the codes, save the client's file as `public/brand/fairafric-logo.svg`.
 
 ## Seed and reset
 
@@ -82,6 +86,8 @@ npm run test:unit    # pure logic, no server, no database
 npm run test:e2e     # HTTP tests (project e2e) and Chromium tests (project browser) against a dev server
 ```
 
+Slice 10 hardening checks (banner, noindex, no cookies, no third-party requests, no video, no contact fields, no secrets in the browser) run inside `test:unit` and `test:e2e`. The manual checklist is [docs/LABEL_AUDIT.md](docs/LABEL_AUDIT.md).
+
 `test:e2e` starts its own dev servers on ports 3100 (normal) and 3101 (database switched off). It writes test scans to the demo database and deletes them afterwards.
 
 **Never run `npm run test:e2e` on demo day after the final reset.** Its cleanup deletes live page views created since the run started.
@@ -89,7 +95,7 @@ npm run test:e2e     # HTTP tests (project e2e) and Chromium tests (project brow
 ## Deploy (Vercel + Supabase)
 
 1. Apply migrations: `npm run db:push`.
-2. In Vercel, set the environment variables above for **production only**.
+2. In Vercel, set Framework Preset to **Next.js** and the environment variables above for **production only** (not `SUPABASE_DB_URL`). Production Branch is `main`; pushing to `main` deploys. Variables apply only after a new deploy.
 3. Attach `fairafric-demo.thefindeapp.com`, check HTTPS, and check functions run in `dub1`.
 4. Turn on deployment protection for preview deployments.
 5. Deploy, then run `npm run reset` locally against the demo project.

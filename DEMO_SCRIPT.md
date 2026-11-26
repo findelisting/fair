@@ -1,6 +1,6 @@
 # Demo script (about 10 minutes)
 
-Follows SPEC.md section 5. Steps marked *pending* depend on slices not yet built (dashboard: slice 4, agent: slice 6); update them when those land.
+Follows SPEC.md section 5. Demo URL: `https://fairafric-demo.thefindeapp.com`. Main presentation code: **d92-at** (`docs/presentation/qr-d92-at.png`); the other codes are for showing how campaigns and markets split.
 
 Audience: fairafric's marketing and branding team, non-technical. Say "synthetic data" whenever a number is not from a live scan.
 
@@ -20,19 +20,19 @@ Show nothing yet. Hold up the printed bar or the QR sheet.
 
 1. Scan code **d92-at** (Dark 92%, wrapper, Austria) with the phone.
 2. Point out: the page opened with the product, campaign and market in the address (`?sku=dark-92&campaign=wrapper-2026&market=AT`).
-3. Show the product page: banner "Demo prototype, synthetic data", the story, links out to fairafric's own site and video (no video hosted here).
+3. Show the product page: banner "Demo prototype, synthetic data", "Shop" opens the real Dark 92% page on fairafric.com in a new tab. "Watch the story" opens fairafric's video on YouTube once the link is added; no video is hosted here. Other bars show labelled demo buttons.
 4. Scan **fb-d92** (feedback form). Submit a rating, a taste note, and optionally a short comment. Point out: no name, no email, no account.
 
-## 3. Dashboard (3 min) — *pending slice 4*
+## 3. Dashboard (3 min)
 
-1. Open the dashboard. The live scan from step 2 is in the counts (within 10 seconds).
+1. Open `/dashboard` (signed in before the meeting). The live scan from step 2 is in the counts (within 10 seconds).
 2. Product view: Dark 92%. Scans, website metrics, feedback themes. Point to the "Synthetic data" badges: history is generated, the scan you just made is live.
 3. Filter market **Austria**, then campaign **Shelf talker, Q4**.
 4. Switch to collection view: **Vegan Creamy line** (one code, two bars).
 5. Feedback themes: one example sentence per theme. The feedback you submitted appears with SKU, campaign and market.
 6. In the product view, the "Market context" and "Ideas to test" cards: short snippets with sources and dates. "Sources are linked so you can check any detail." Packaging ideas are marked "Suggestion, not validated" (they are also the branding team).
 
-## 4. Agent (2 min) — *pending slice 6*
+## 4. Agent (2 min)
 
 Click the prepared questions in turn; read the answer, then open its sources.
 
@@ -73,4 +73,13 @@ One competitor reference with source link and date, and two hypotheses marked "H
 
 ## Backup screenshots
 
-Take one per step above on the deployed app after the final reset and keep them on the laptop (not in the app or repo). *Pending until slices 4 and 6 are built.*
+Take one per step above on the deployed app after the final reset and keep them on the laptop (not in the app or repo). Take them with the phone and laptop, name them by step:
+
+1. `01-qr-sheet` — printed sheet or `/dashboard/codes`.
+2. `02-product-d92` — product page on the phone after scanning d92-at, address bar visible.
+3. `03-feedback-form` and `04-feedback-thanks`.
+4. `05-dashboard-product` — Dark 92%, no filter.
+5. `06-dashboard-at-shelf` — market Austria, campaign Shelf talker.
+6. `07-dashboard-collection` — Vegan Creamy line.
+7. `08-agent-q1` to `11-agent-q4` — each answer with its sources open.
+8. `12-market-ideas` — Market context, Ideas to test and Packaging ideas cards.
