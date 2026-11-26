@@ -51,7 +51,7 @@ test('cards show call to action, label, Demo only; dev URL shows the warning', a
   await expect(first).toContainText('d92-at')
   await expect(page.getByTestId('base-url-warning')).toContainText('Not print-ready')
   await expect(page.getByTestId('print-ready')).toHaveCount(0)
-  await expect(page.getByTestId('logo-offer')).toContainText('Upload your logo')
+  await expect(page.getByTestId('logo-offer')).toContainText('Send us your logo file')
   await expect(page.getByText('Demo prototype, synthetic data').first()).toBeVisible()
 })
 

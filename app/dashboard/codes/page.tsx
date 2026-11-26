@@ -48,7 +48,7 @@ export default async function CodesSheet() {
 
       {!hasLogo && (
         <p data-testid="logo-offer" className="mb-4 text-sm text-ink-secondary print:hidden">
-          Want your logo in the centre of each code? Upload your logo file and we add it to every code.
+          Want your logo in the centre of each code? Send us your logo file and we add it to every code.
         </p>
       )}
 
