@@ -9,7 +9,8 @@ export interface Source {
   url?: string
   /** As-of or access date, already formatted for display. */
   date: string
-  kind: DataKind
+  /** Live / synthetic badge. Omitted for real public sources (retailer listings), which are neither (ADR 0006). */
+  kind?: DataKind
 }
 
 /** Lists the sources under an agent answer or a competitor value (CLAUDE.md scope items 8 and 9). */
@@ -30,7 +31,7 @@ export function SourceList({ sources }: { sources: Source[] }) {
             )}
             {s.detail && <span className="text-ink-secondary">{s.detail}</span>}
             <span className="text-ink-tertiary">as of {s.date}</span>
-            <DataBadge kind={s.kind} />
+            {s.kind && <DataBadge kind={s.kind} />}
           </li>
         ))}
       </ul>

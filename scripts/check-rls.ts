@@ -63,6 +63,10 @@ async function main() {
   const calls: [string, Record<string, unknown>][] = [
     ['seed_demo', { payload: {} }],
     ['record_scan', { p_code: 'd92-at', p_record: false, p_device: 'unknown', p_language: null, p_is_bot: true }],
+    // Read-only agent functions (ADR 0006).
+    ['agent_scans_by_code', { p_market: 'AT' }],
+    ['agent_feedback_visits_by_campaign', {}],
+    ['agent_themes_for_sku', { p_sku: 'dark-92' }],
   ]
   for (const [fn, args] of calls) {
     const { error } = await publicClient.rpc(fn, args)

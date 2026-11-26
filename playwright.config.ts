@@ -19,14 +19,19 @@ const baseURL = process.env.E2E_BASE_URL ?? `http://localhost:${port}`
 export default defineConfig({
   reporter: [['list']],
   timeout: 90_000,
+  // Writes that run after the response (page views) and Server Action redirects can take a few seconds
+  // when the whole suite loads the dev servers; 15 s keeps assertions stable without hiding real failures.
+  expect: { timeout: 15_000 },
   use: { baseURL },
   globalSetup: './tests/e2e/global-setup.ts',
   // Deletes test scans, test feedback and test page views (ADR 0002 decision 10, ADR 0003 decision 11).
   globalTeardown: './tests/e2e/global-teardown.ts',
   projects: [
-    { name: 'e2e', testDir: './tests/e2e' },
-    // Runs after "e2e", so browser tests never compete with the redirect timing test (E-RD-7) for the dev server.
-    { name: 'browser', testDir: './tests/browser', use: { ...devices['Desktop Chrome'], baseURL }, dependencies: ['e2e'] },
+    { name: 'e2e', testDir: './tests/e2e', testIgnore: /agent\.spec\.ts/ },
+    // The agent's live-scan test (E-AG-6) scans d92-at like the redirect tests do, so it runs after them.
+    { name: 'agent', testDir: './tests/e2e', testMatch: /agent\.spec\.ts/, dependencies: ['e2e'] },
+    // Runs last, so browser tests never compete with the redirect timing test (E-RD-7) for the dev server.
+    { name: 'browser', testDir: './tests/browser', use: { ...devices['Desktop Chrome'], baseURL }, dependencies: ['agent'] },
   ],
   webServer: process.env.E2E_BASE_URL
     ? undefined
