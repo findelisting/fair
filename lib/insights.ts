@@ -10,6 +10,15 @@ export interface CompetitorSource {
   url: string
   /** ISO date (YYYY-MM-DD) the source was read. */
   accessedOn: string
+  /** True when values come from a search result, not the page itself. Prices then show with "~". */
+  estimate?: boolean
+}
+
+/** A related product or approach, shown as a link only, with no values. */
+export interface ExploreLink {
+  label: string
+  url: string
+  comparesTo: string
 }
 
 export interface CompetitorValue {
@@ -32,6 +41,8 @@ export interface CompetitorProduct {
 
 export interface Hypothesis {
   id: string
+  /** Demo SKU id the hypothesis belongs to. */
+  sku: string
   statement: string
   /** Named metrics the hypothesis rests on. */
   basis: string[]
@@ -83,7 +94,22 @@ export function checkCompetitors(data: unknown, today: Date = new Date()): strin
       }
     }
   }
+  const explore = (data as { explore?: unknown })?.explore ?? []
+  if (!Array.isArray(explore)) errors.push('competitors: "explore" must be an array')
+  else
+    for (const [i, e] of (explore as Partial<ExploreLink>[]).entries()) {
+      if (!isNonEmptyString(e?.label) || !isNonEmptyString(e?.comparesTo)) errors.push(`explore[${i}]: needs a label and comparesTo`)
+      if (!isHttps(e?.url)) errors.push(`explore[${i}]: needs an https URL`)
+    }
   return errors
+}
+
+function isHttps(v: unknown): boolean {
+  try {
+    return new URL(String(v)).protocol === 'https:'
+  } catch {
+    return false
+  }
 }
 
 export function checkHypotheses(data: unknown): string[] {
@@ -93,6 +119,7 @@ export function checkHypotheses(data: unknown): string[] {
   for (const [i, h] of (list as Partial<Hypothesis>[]).entries()) {
     const at = `hypotheses[${i}]${h?.id ? ` (${h.id})` : ''}`
     if (!isNonEmptyString(h?.id)) errors.push(`${at}: missing id`)
+    if (!isNonEmptyString(h?.sku)) errors.push(`${at}: missing sku`)
     if (!isNonEmptyString(h?.statement)) errors.push(`${at}: missing statement`)
     if (!Array.isArray(h?.basis) || h.basis.length === 0 || !h.basis.every(isNonEmptyString)) {
       errors.push(`${at}: needs a data basis`)
@@ -113,13 +140,34 @@ function load<T>(name: string, data: unknown, check: (d: unknown) => string[]): 
   return data as T
 }
 
-export const competitors: CompetitorProduct[] = load<{ products: CompetitorProduct[] }>(
-  'competitors',
-  competitorsJson,
-  checkCompetitors,
-).products
+const competitorData = load<{ products: CompetitorProduct[]; explore?: ExploreLink[] }>('competitors', competitorsJson, checkCompetitors)
 
+export const competitors: CompetitorProduct[] = competitorData.products
+export const exploreLinks: ExploreLink[] = competitorData.explore ?? []
 export const hypotheses: Hypothesis[] = load<{ hypotheses: Hypothesis[] }>('hypotheses', hypothesesJson, checkHypotheses).hypotheses
+
+/** Market context for one SKU (the product view), or everything when no SKU is given. */
+export function insightsFor(sku?: string) {
+  const match = (id: string) => !sku || id === sku
+  return {
+    products: competitors.filter((p) => match(p.comparesTo)),
+    explore: exploreLinks.filter((e) => match(e.comparesTo)),
+    hypotheses: hypotheses.filter((h) => match(h.sku)),
+  }
+}
+
+/** Display text for a value: prices from search results get a "~" to mark them as estimates. */
+export function displayValue(p: CompetitorProduct, v: CompetitorValue): string {
+  const estimate = p.sources[v.source]?.estimate && v.value.trim().startsWith('€')
+  return estimate ? `~${v.value}` : v.value
+}
+
+/** One-line summary for the collapsed row: "~€5.09 / 100 g". */
+export function snippetLine(p: CompetitorProduct): string {
+  const price = p.values.find((v) => v.label === 'Price')
+  const size = p.values.find((v) => v.label === 'Pack size')
+  return [price && displayValue(p, price), size?.value].filter(Boolean).join(' / ')
+}
 
 /** "2026-11-26" -> "26 Nov 2026", fixed to UTC so server and tests agree. */
 export function formatAccessDate(iso: string): string {

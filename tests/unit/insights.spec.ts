@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { checkCompetitors, checkHypotheses, competitors, findClaimWords, formatAccessDate, hypotheses } from '@/lib/insights'
+import { checkCompetitors, checkHypotheses, competitors, displayValue, findClaimWords, formatAccessDate, hypotheses, insightsFor, snippetLine, type CompetitorProduct } from '@/lib/insights'
 import competitorsJson from '@/data/competitors.json'
 import hypothesesJson from '@/data/hypotheses.json'
 
@@ -72,7 +72,7 @@ test('a value pointing to an unknown source is rejected', () => {
 })
 
 test('a hypothesis without a data basis is rejected', () => {
-  expect(checkHypotheses({ hypotheses: [{ id: 'h', statement: 'S', basis: [] }] }).join()).toContain('data basis')
+  expect(checkHypotheses({ hypotheses: [{ id: 'h', statement: 'S', sku: 'dark-92', basis: [] }] }).join()).toContain('data basis')
 })
 
 test('no claim words in the shipped data, and the check catches them', () => {
@@ -83,4 +83,35 @@ test('no claim words in the shipped data, and the check catches them', () => {
 
 test('access dates format the same everywhere', () => {
   expect(formatAccessDate('2026-11-26')).toBe('26 Nov 2026')
+})
+
+test('estimated prices get a ~, other values do not', () => {
+  const p = competitors[0]
+  const price = p.values.find((v) => v.label === 'Price')!
+  const cocoa = p.values.find((v) => v.label === 'Cocoa')!
+  expect(displayValue(p, price)).toMatch(/^~€/)
+  expect(displayValue(p, cocoa)).not.toContain('~')
+  expect(snippetLine(p)).toMatch(/^~€[\d.]+ \/ \d+ g$/)
+})
+
+test('a non-estimate price shows without ~', () => {
+  const p = structuredClone(good.products[0]) as CompetitorProduct
+  expect(displayValue(p, p.values[0])).toBe('€1')
+})
+
+test('insights are filtered per SKU', () => {
+  const dark = insightsFor('dark-92')
+  expect(dark.products.every((p) => p.comparesTo === 'dark-92')).toBe(true)
+  expect(dark.explore.length).toBeGreaterThan(0)
+  expect(dark.hypotheses.every((h) => h.sku === 'dark-92')).toBe(true)
+  expect(insightsFor().products.length).toBe(competitors.length)
+})
+
+test('an explore link without https is rejected', () => {
+  const d = { ...clone(), explore: [{ label: 'X', url: 'http://x.test', comparesTo: 'dark-92' }] }
+  expect(checkCompetitors(d, today).join()).toContain('explore[0]')
+})
+
+test('a hypothesis without a sku is rejected', () => {
+  expect(checkHypotheses({ hypotheses: [{ id: 'h', statement: 'S', basis: ['b'] }] }).join()).toContain('missing sku')
 })

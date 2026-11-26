@@ -186,6 +186,8 @@ Tasks:
   - Panels for scans, page views and feedback, each with a `DataBadge`.
   - Polls every 5 seconds. If a poll fails, keep the last data and show "Reconnecting".
 - Charts: simple bars and lines. Keep them light.
+- Product view: place `CompetitorPanel` and `HypothesesPanel` with the selected `sku` (ADR 0001, amendment 2). Delete `app/preview/insights` and point `tests/e2e/insights.spec.ts` at the dashboard.
+- "Useful and accurate?" check: one-tap thumbs up or down at the end of each insight card, at most once per card per session, optional. Store card id, answer and timestamp only, no user identity (ADR 0001, amendment 2).
 - Panels start empty until slice 5 adds synthetic data. Each panel shows a clear `EmptyState`.
 - End-to-end test: a request to `/r/<code>` shows up on the dashboard within 10 seconds.
 
@@ -214,7 +216,7 @@ Done when (checkpoint B):
 
 Tasks:
 - Migration: one SQL function per agent question.
-- `lib/agent.ts` holds three fixed questions. Each has:
+- `lib/agent.ts` holds four fixed questions: the three from SPEC, plus "How does the 92% bar compare on price?", answered from `lib/insights.ts` as a snippet with its sources (ADR 0001, amendment 2). Each has:
   - Its SQL function.
   - A text template for the answer.
   - A sources object: tables, filters, row counts, as-of time (Europe/Berlin), and live, synthetic or both.
@@ -223,7 +225,7 @@ Tasks:
 - Unit tests: each question returns an answer and at least one source.
 
 Done when:
-- All three questions answer with sources.
+- All four questions answer with sources.
 - A new live scan in Austria can change the answer to question 1.
 
 ## Slice 7: Competitor panel and hypotheses (S)
@@ -233,7 +235,7 @@ Tasks:
 - The loader rejects any entry without a source URL and date. Unit test for this.
 - Researched values are shown as they are, with source and date. No human review step for the demo (ADR 0001); review guardrails come with the pilot.
 - `data/hypotheses.json` holds two or three hypotheses, each with a statement and its data basis.
-- Both are panels on the dashboard. Every hypothesis carries a `HypothesisLabel`.
+- Both are snippet cards in the dashboard product view, filtered per SKU. Every hypothesis carries a `HypothesisLabel`. Prices read from search results show with `~`; related products appear as "Also worth a look" links (ADR 0001, amendment 2).
 
 Done when (checkpoint C):
 - Every competitor value shows a source and date.

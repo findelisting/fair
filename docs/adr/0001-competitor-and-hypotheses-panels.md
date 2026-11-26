@@ -58,3 +58,18 @@ Before deciding, we checked the base and tested the build approach:
 - **Render tests in unit tests with `react-dom/server`.** Rejected after the spike failed under Playwright's transform. Adding Vitest or Jest only for this would add a second test runner that Finde does not use.
 - **One source per product instead of per value.** Simpler, but it does not prove "every competitor value shows its source" when values come from different pages. Rejected.
 - **A schema library (zod).** Not needed for two small files, and adding it would touch `package.json`, which slice 1 also edits. Rejected.
+
+## Amendment 2 (2026-11-26): presentation, estimates and related products
+
+Decided with the user after the first build.
+
+- **Where:** inside the dashboard product view, not a separate page or tab. Each SKU shows a "Market context" card (its competitors only) and an "Ideas to test" card (its hypotheses only). Market context next to their own numbers is more convincing than a research page they must visit.
+- **When:** both passive and on request, never a pop-up or a message on each login.
+  - Passive: the cards sit in the product view, collapsed to one line per product.
+  - On request: a fourth agent question in slice 6, "How does the 92% bar compare on price?", answers with the same snippet and its sources.
+- **Snippet format:** one line per product (`Brand Product  ~€5.09 / 100 g  Publisher · date`). Clicking expands every value with its own source and date. Built with `<details>`, so no client JavaScript.
+- **Close matches:** when there is no exact equivalent, the closest public product is used (for example, a 60% date-sweetened dark bar against the vegan Creamy Oat bar).
+- **Estimates:** a source marked `estimate: true` (values read from a search result because the retailer blocks automated reads) shows its prices with `~`. The card then says "Prices with ~ are estimates from public listings."
+- **Related products:** an "Also worth a look" line lists variations and other approaches as links only, with no values, filtered per SKU.
+- **"Useful and accurate?" check:** a one-tap 👍/👎 at the end of each card, shown at most once per card per session, optional, and never worded as a task. Stored anonymously against the card, with no user identity. It needs the dashboard session and the database, so it is built in slice 4.
+- **Empty SKUs:** a card with nothing for the selected SKU is not shown.

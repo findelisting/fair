@@ -2,17 +2,20 @@
   "hypotheses": [
     {
       "id": "origin-story-92",
-      "statement": "Telling the origin story on the Dark 92% wrapper could lift scans and positive feedback.",
-      "basis": ["Origin theme count, Dark 92%", "Scans per wrapper code, Dark 92%"]
+      "sku": "dark-92",
+      "statement": "Origin story on the 92% wrapper could lift scans.",
+      "basis": ["Origin theme count", "Scans per wrapper code"]
     },
     {
       "id": "bitterness-guidance-92",
-      "statement": "A short tasting tip on the Dark 92% product page could soften 'too bitter' feedback.",
-      "basis": ["Bitterness theme count, Dark 92%", "Feedback ratings, Dark 92%"]
+      "sku": "dark-92",
+      "statement": "A tasting tip could soften 'too bitter' feedback.",
+      "basis": ["Bitterness theme count", "Ratings"]
     },
     {
       "id": "shelf-talker-vs-wrapper",
-      "statement": "Shelf talkers may bring more first-time visits to the feedback page than wrapper codes.",
+      "sku": "creamy-oat",
+      "statement": "Shelf talkers may bring more feedback visits than wrappers.",
       "basis": ["Scans by campaign", "Feedback page views by campaign"]
     }
   ]

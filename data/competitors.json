@@ -3,14 +3,15 @@
     {
       "id": "lindt-excellence-90",
       "brand": "Lindt",
-      "product": "Excellence Mild 90% Cacao",
+      "product": "Excellence Mild 90%",
       "market": "DE",
       "comparesTo": "dark-92",
       "sources": {
         "knuspr": {
-          "publisher": "Knuspr (online grocer, DE)",
+          "publisher": "Knuspr",
           "url": "https://www.knuspr.de/52660-lindt-excellence-mild-90",
-          "accessedOn": "2026-11-26"
+          "accessedOn": "2026-11-26",
+          "estimate": true
         }
       },
       "values": [
@@ -23,14 +24,15 @@
     {
       "id": "vivani-dattelsuesse-60",
       "brand": "Vivani",
-      "product": "Zartbitter Dattelsüße 60%",
+      "product": "Dark 60%, date-sweetened",
       "market": "DE",
       "comparesTo": "creamy-oat",
       "sources": {
         "dm": {
-          "publisher": "dm-drogerie markt (DE)",
+          "publisher": "dm",
           "url": "https://www.dm.de/p/d/3154081/",
-          "accessedOn": "2026-11-26"
+          "accessedOn": "2026-11-26",
+          "estimate": true
         }
       },
       "values": [
@@ -39,6 +41,33 @@
         { "label": "Price per kg", "value": "€49.38", "source": "dm" },
         { "label": "Cocoa", "value": "60%", "source": "dm" }
       ]
+    }
+  ],
+  "explore": [
+    {
+      "label": "Lindt Excellence 85%",
+      "url": "https://www.rewe.de/shop/p/lindt-excellence-schokolade-edelbitter-mild-85-cacao-100g/997154",
+      "comparesTo": "dark-92"
+    },
+    {
+      "label": "dmBio Edelbitter 90% (own brand)",
+      "url": "https://www.dm.de/p/d/1640571/",
+      "comparesTo": "dark-92"
+    },
+    {
+      "label": "Lindt Hello Vegan, oat-based",
+      "url": "https://www.rewe.de/shop/p/lindt-hello-schokolade-vegan-cookies-100g/8452846",
+      "comparesTo": "creamy-oat"
+    },
+    {
+      "label": "Ombar Oat M'lk Original",
+      "url": "https://ocado.com/products/ombar-oat-m-lk-original-569310011",
+      "comparesTo": "creamy-oat"
+    },
+    {
+      "label": "H!P Oat M!lk Original",
+      "url": "https://shop.edenproject.com/products/hip-original-oat-milk-choc-bar-70g",
+      "comparesTo": "creamy-hazelnut"
     }
   ]
 }
