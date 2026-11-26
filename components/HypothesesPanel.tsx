@@ -6,16 +6,14 @@ export function HypothesesPanel({ sku }: { sku?: string }) {
   const { hypotheses } = insightsFor(sku)
   if (hypotheses.length === 0) return null
   return (
-    <section data-testid="hypotheses-panel" className="rounded-xl border border-line bg-surface p-4">
+    <section data-testid="hypotheses-panel" className="p-5">
       <h2 className="mb-2 font-display text-base font-bold">Ideas to test</h2>
       <ul className="divide-y divide-line text-sm">
         {hypotheses.map((h) => (
-          <li key={h.id} data-testid="hypothesis" className="py-2">
-            <p className="flex flex-wrap items-center gap-2">
-              <span className="font-medium">{h.statement}</span>
-              <HypothesisLabel />
-            </p>
-            <p className="mt-0.5 text-xs text-ink-tertiary">Data basis: {h.basis.join(' · ')}</p>
+          <li key={h.id} data-testid="hypothesis" className="flex flex-col items-start gap-1.5 py-3">
+            <span className="font-medium">{h.statement}</span>
+            <HypothesisLabel />
+            <p className="text-xs text-ink-tertiary">Data basis: {h.basis.join(' · ')}</p>
           </li>
         ))}
       </ul>

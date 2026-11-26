@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 // Shown for unknown, invalid or switched-off QR codes (ADR 0002). Not counted as a page view.
 export default function CodeInactive() {
   return (
-    <main className="mx-auto flex max-w-md flex-col items-center gap-4 px-6 py-16 text-center">
+    <main id="main" className="mx-auto flex max-w-md flex-col items-center gap-4 px-6 py-16 text-center">
       <QrCode aria-hidden className="h-10 w-10 text-ink-tertiary" />
       <h1 className="font-display text-2xl font-bold">This code is not active.</h1>
       <p className="text-ink-secondary">

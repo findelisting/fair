@@ -28,20 +28,23 @@ export async function AgentPanel({ ask, hrefFor }: Props) {
   }
 
   return (
-    <section data-testid="agent-panel" className="flex flex-col gap-4 rounded-2xl bg-surface p-5 ring-1 ring-line">
-      <header className="flex items-center gap-2">
-        <Bot aria-hidden className="h-5 w-5 text-green" />
-        <h2 className="font-display text-lg font-bold">Ask the product agent</h2>
+    <section data-testid="agent-panel" className="flex flex-col gap-4 rounded-2xl bg-night p-5 text-ivory [--focus-ring:var(--color-gold)] md:p-6">
+      <header className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="flex items-center gap-2 font-display text-xl font-bold">
+          <Bot aria-hidden className="h-5 w-5 text-gold" />
+          Ask the product agent
+        </h2>
+        <p className="text-xs text-mist">Answers are counted from the data, with sources. No external AI.</p>
       </header>
-      <ul className="flex flex-col gap-2">
+      <ul className="grid gap-2 md:grid-cols-2">
         {QUESTIONS.map((q) => (
           <li key={q.id}>
             <a
               href={hrefFor(q.id)}
               aria-current={q.id === id ? 'true' : undefined}
               className={cn(
-                'flex min-h-11 items-center rounded-xl px-4 py-2 text-sm font-medium ring-1 ring-inset',
-                q.id === id ? 'bg-green text-ivory ring-green' : 'bg-canvas text-ink ring-line',
+                'flex h-full min-h-12 items-center rounded-xl px-4 py-2 text-sm font-medium ring-1 ring-inset transition-colors',
+                q.id === id ? 'bg-gold text-night ring-gold' : 'bg-night-raised text-ivory ring-white/10 hover:ring-gold/60',
               )}
             >
               {q.question}
@@ -51,9 +54,9 @@ export async function AgentPanel({ ask, hrefFor }: Props) {
       </ul>
 
       {id && (
-        <div data-testid="agent-answer" className="flex flex-col gap-2 border-t border-line pt-4">
+        <div data-testid="agent-answer" className="rise-in flex flex-col gap-2 rounded-xl bg-surface p-5 text-ink">
           <h3 className="text-sm font-semibold text-ink-secondary">{QUESTIONS.find((q) => q.id === id)!.question}</h3>
-          <p data-testid="agent-answer-text" className="text-base">
+          <p data-testid="agent-answer-text" className="font-display text-lg font-semibold leading-snug">
             {failed ? 'The answer is not available right now. Please try again in a moment.' : answer?.answer}
           </p>
           {answer && <SourceList sources={answer.sources} />}

@@ -35,16 +35,16 @@ export function InsightCheck({ cardId }: { cardId: string }) {
   }
 
   return (
-    <div data-testid="insight-check" className="mt-3 flex items-center gap-2 border-t border-line pt-2 text-xs text-ink-tertiary">
+    <div data-testid="insight-check" className="mt-auto flex items-center gap-2 border-t border-line bg-canvas/50 px-5 py-1.5 text-xs text-ink-tertiary">
       {done ? (
         <span>Thanks for the feedback.</span>
       ) : (
         <>
           <span>Useful and accurate?</span>
-          <button type="button" aria-label="Yes" onClick={() => send('up')} className="rounded-full p-1 hover:bg-canvas hover:text-green">
+          <button type="button" aria-label="Yes" onClick={() => send('up')} className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-surface hover:text-green">
             <ThumbsUp aria-hidden className="h-3.5 w-3.5" />
           </button>
-          <button type="button" aria-label="No" onClick={() => send('down')} className="rounded-full p-1 hover:bg-canvas hover:text-ink">
+          <button type="button" aria-label="No" onClick={() => send('down')} className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-surface hover:text-ink">
             <ThumbsDown aria-hidden className="h-3.5 w-3.5" />
           </button>
         </>

@@ -30,3 +30,6 @@ playwright/.cache/
 next-env.d.ts
 .DS_Store
 Thumbs.db
+
+# Design review screenshots (local only)
+.design/*/screenshots/

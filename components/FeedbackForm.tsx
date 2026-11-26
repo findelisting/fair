@@ -61,7 +61,7 @@ export function FeedbackForm({ sku, campaign, market, submissionId }: Props) {
           {TASTE_NOTES.map((n) => (
             <label
               key={n.value}
-              className="flex min-h-11 cursor-pointer items-center rounded-full bg-surface px-4 py-2 text-sm font-medium ring-1 ring-inset ring-line has-[:checked]:bg-green has-[:checked]:text-ivory has-[:checked]:ring-green has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-green"
+              className="flex min-h-12 cursor-pointer items-center rounded-full bg-surface px-4 py-2 text-sm font-medium ring-1 ring-inset ring-cream-deep transition-colors hover:ring-caramel has-[:checked]:bg-cocoa has-[:checked]:text-cream has-[:checked]:ring-cocoa has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-caramel"
             >
               <input
                 type="radio"
@@ -94,7 +94,7 @@ export function FeedbackForm({ sku, campaign, market, submissionId }: Props) {
           defaultValue={values?.free_text ?? ''}
           onInput={(e) => setCount(e.currentTarget.value.length)}
           placeholder="Please don't enter names, email addresses or phone numbers."
-          className="rounded-xl bg-surface p-3 text-base ring-1 ring-inset ring-line focus:outline-none focus:ring-2 focus:ring-green"
+          className="rounded-2xl bg-surface p-4 text-base ring-1 ring-inset ring-cream-deep focus:outline-none focus:ring-2 focus:ring-caramel"
         />
         {count !== null && (
           <p className="text-right text-xs text-ink-tertiary" aria-live="polite">
@@ -106,7 +106,7 @@ export function FeedbackForm({ sku, campaign, market, submissionId }: Props) {
       <button
         type="submit"
         disabled={pending}
-        className="min-h-12 rounded-xl bg-green px-4 py-3 text-base font-semibold text-ivory disabled:opacity-60"
+        className="min-h-14 rounded-full bg-cocoa px-5 py-3 text-base font-semibold text-cream transition-colors hover:bg-cocoa-raised disabled:opacity-60"
       >
         {pending ? 'Sending…' : 'Send feedback'}
       </button>

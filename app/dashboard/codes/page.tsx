@@ -20,7 +20,7 @@ export default async function CodesSheet() {
   const cards = status === 'invalid' ? [] : await buildSheet(base, hasLogo ? LOGO_PUBLIC_PATH : null)
 
   return (
-    <main className="qr-sheet mx-auto max-w-[210mm] px-6 py-8 print:p-0">
+    <main id="main" className="qr-sheet mx-auto max-w-[210mm] px-6 py-8 print:p-0">
       <style>{`@page { size: A4; margin: 10mm } .qr-sheet, .qr-sheet * { print-color-adjust: exact; -webkit-print-color-adjust: exact } @media print { .qr-card { break-inside: avoid } }`}</style>
       <header className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
         <div>

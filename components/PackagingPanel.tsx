@@ -10,18 +10,20 @@ export function PackagingPanel({ sku }: { sku?: string }) {
   const ideas = packagingFor(sku)
   if (ideas.length === 0) return null
   return (
-    <section data-testid="packaging-panel" className="rounded-xl border border-line bg-surface p-4">
+    <section data-testid="packaging-panel" className="p-5">
       <h2 className="mb-2 font-display text-base font-bold">Packaging ideas</h2>
       <ul className="divide-y divide-line text-sm">
         {ideas.map((idea) => (
           <li key={idea.id} data-testid="packaging-idea">
             <details className="group">
-              <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-2 gap-y-1 py-2">
-                <ChevronRight aria-hidden className="h-4 w-4 text-ink-tertiary transition group-open:rotate-90" />
-                <span className="font-medium">{idea.statement}</span>
-                <SuggestionLabel />
+              <summary className="grid cursor-pointer list-none grid-cols-[1rem_1fr] gap-x-2 py-3 [&::-webkit-details-marker]:hidden">
+                <ChevronRight aria-hidden className="mt-0.5 h-4 w-4 text-ink-tertiary transition group-open:rotate-90" />
+                <span className="flex flex-col items-start gap-1.5">
+                  <span className="font-medium">{idea.statement}</span>
+                  <SuggestionLabel />
+                </span>
               </summary>
-              <div className="mb-2 ml-6 space-y-1">
+              <div className="mb-3 ml-6 space-y-1">
                 <p className="text-xs text-ink-tertiary">Data basis: {idea.basis.join(' · ')}</p>
                 {idea.sources.map((s) => (
                   <p key={s.url + s.publisher} data-testid="packaging-source" className="text-xs">

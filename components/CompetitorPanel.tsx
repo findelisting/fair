@@ -11,7 +11,7 @@ export function CompetitorPanel({ sku }: { sku?: string }) {
   if (products.length === 0 && explore.length === 0) return null
   const anyEstimate = products.some((p) => Object.values(p.sources).some((s) => s.estimate))
   return (
-    <section data-testid="competitor-panel" className="rounded-xl border border-line bg-surface p-4">
+    <section data-testid="competitor-panel" className="p-5">
       <h2 className="mb-2 font-display text-base font-bold">Market context</h2>
       <ul className="divide-y divide-line text-sm">
         {products.map((p) => {
@@ -19,14 +19,20 @@ export function CompetitorPanel({ sku }: { sku?: string }) {
           return (
             <li key={p.id} data-testid="competitor-product">
               <details className="group">
-                <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 py-2">
-                  <ChevronRight aria-hidden className="h-4 w-4 text-ink-tertiary transition group-open:rotate-90" />
-                  <span className="font-medium">
-                    {p.brand} {p.product}
-                  </span>
-                  <span data-testid="competitor-snippet">{snippetLine(p)}</span>
-                  <span className="text-xs text-ink-tertiary">
-                    {first.publisher} · {formatAccessDate(first.accessedOn)}
+                <summary className="grid cursor-pointer list-none grid-cols-[1rem_1fr] gap-x-2 py-3 [&::-webkit-details-marker]:hidden">
+                  <ChevronRight aria-hidden className="mt-0.5 h-4 w-4 text-ink-tertiary transition group-open:rotate-90" />
+                  <span className="flex flex-col gap-0.5">
+                    <span className="flex flex-wrap items-baseline justify-between gap-x-3">
+                      <span className="font-medium">
+                        {p.brand} {p.product}
+                      </span>
+                      <span data-testid="competitor-snippet" className="font-semibold tabular-nums">
+                        {snippetLine(p)}
+                      </span>
+                    </span>
+                    <span className="text-xs text-ink-tertiary">
+                      {first.publisher} · {formatAccessDate(first.accessedOn)}
+                    </span>
                   </span>
                 </summary>
                 <dl className="mb-2 ml-7 space-y-1">

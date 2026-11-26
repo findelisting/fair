@@ -7,6 +7,8 @@ test.use({ userAgent: IPHONE, viewport: { width: 390, height: 844 } })
 test.describe.configure({ mode: 'serial' })
 
 const PRODUCT = '/p/dark-92?sku=dark-92&campaign=wrapper-2026&market=AT'
+// A bar without brand links, so Shop and Watch the story stay labelled demo buttons (Dark 92% links out since b49985e).
+const DEMO_PRODUCT = '/p/creamy-oat?sku=creamy-oat&campaign=wrapper-2026&market=DE'
 const COLLECTION = '/c/vegan-creamy?collection=vegan-creamy&campaign=influencer-q4-2026&market=DE'
 const FEEDBACK = '/f/creamy-oat?sku=creamy-oat&campaign=influencer-q4-2026&market=DE'
 const BANNER = 'Demo prototype, synthetic data'
@@ -27,6 +29,7 @@ test('B-PG-1: product page shows the product and demo buttons', async ({ page })
   await expect(page.getByText(BANNER)).toBeVisible()
   const feedback = page.getByRole('link', { name: /give feedback/i })
   await expect(feedback).toHaveAttribute('href', '/f/dark-92?sku=dark-92&campaign=wrapper-2026&market=AT')
+  await page.goto(DEMO_PRODUCT)
   for (const name of [/^shop/i, /watch the story/i]) {
     await expect(page.getByRole('button', { name })).toBeVisible()
     await expect(page.getByRole('link', { name })).toHaveCount(0)
@@ -37,9 +40,9 @@ test('B-PG-1: product page shows the product and demo buttons', async ({ page })
 })
 
 test('B-PG-2: a shop code highlights the shop button', async ({ page }) => {
-  await page.goto(`${PRODUCT}&intent=shop`)
+  await page.goto(`${DEMO_PRODUCT}&intent=shop`)
   await expect(page.getByRole('button', { name: /^shop/i })).toHaveAttribute('data-highlight', 'true')
-  await page.goto(PRODUCT)
+  await page.goto(DEMO_PRODUCT)
   await expect(page.getByRole('button', { name: /^shop/i })).toHaveAttribute('data-highlight', 'false')
 })
 

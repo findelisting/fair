@@ -13,7 +13,7 @@ export function RatingInput({ defaultValue, error }: { defaultValue?: string; er
           return (
             <label
               key={n}
-              className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-xl text-line has-[:checked]:text-gold has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-green [&:has(~label_input:checked)]:text-gold"
+              className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-xl text-caramel has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-caramel [&_svg]:fill-transparent [&_svg]:transition-colors hover:[&_svg]:fill-caramel/25 has-[:checked]:[&_svg]:fill-caramel [&:has(~label_input:checked)_svg]:fill-caramel"
             >
               <input
                 type="radio"
@@ -23,7 +23,8 @@ export function RatingInput({ defaultValue, error }: { defaultValue?: string; er
                 defaultChecked={defaultValue === String(n)}
                 className="sr-only"
               />
-              <Star aria-hidden className="h-9 w-9 fill-current" />
+              {/* Empty stars are a caramel outline (3.4:1 on cream, WCAG 1.4.11); chosen stars fill in. */}
+              <Star aria-hidden className="h-9 w-9" strokeWidth={1.75} />
               <span className="sr-only">{label}</span>
             </label>
           )
