@@ -10,6 +10,8 @@ export default defineConfig({
   reporter: [['list']],
   timeout: 60_000,
   use: { baseURL },
+  // Deletes every scan tagged x-e2e, so test data never reaches the demo dashboard (ADR 0002, decision 10).
+  globalTeardown: './tests/e2e/global-teardown.ts',
   webServer: process.env.E2E_BASE_URL
     ? undefined
     : {
