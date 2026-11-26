@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test'
-import { checkCompetitors, checkHypotheses, competitors, displayValue, findClaimWords, formatAccessDate, hypotheses, insightsFor, snippetLine, type CompetitorProduct } from '@/lib/insights'
+import { checkCompetitors, checkHypotheses, competitors, displayValue, findClaimWords, formatAccessDate, hypotheses, insightsFor, snippetLine, checkPackaging, packagingFor, type CompetitorProduct } from '@/lib/insights'
 import competitorsJson from '@/data/competitors.json'
 import hypothesesJson from '@/data/hypotheses.json'
+import packagingJson from '@/data/packaging.json'
 
 const good = {
   products: [
@@ -114,4 +115,20 @@ test('an explore link without https is rejected', () => {
 
 test('a hypothesis without a sku is rejected', () => {
   expect(checkHypotheses({ hypotheses: [{ id: 'h', statement: 'S', basis: ['b'] }] }).join()).toContain('missing sku')
+})
+
+test('packaging ideas are valid, claim-free, and filtered per SKU with "all"', () => {
+  expect(checkPackaging(packagingJson)).toEqual([])
+  expect(findClaimWords(packagingJson)).toEqual([])
+  const dark = packagingFor('dark-92')
+  expect(dark.every((i) => i.sku === 'all' || i.sku === 'dark-92')).toBe(true)
+  expect(dark.some((i) => i.sku === 'all')).toBe(true)
+})
+
+test('a packaging idea with a bad source or no basis is rejected', () => {
+  const bad = { ideas: [{ id: 'p', sku: 'all', statement: 'S', basis: [], sources: [{ publisher: 'X', note: 'n', url: 'http://x', accessedOn: '2030-01-01' }] }] }
+  const errors = checkPackaging(bad, today).join()
+  expect(errors).toContain('data basis')
+  expect(errors).toContain('https URL')
+  expect(errors).toContain('past accessedOn')
 })

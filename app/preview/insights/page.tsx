@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { CompetitorPanel } from '@/components/CompetitorPanel'
 import { HypothesesPanel } from '@/components/HypothesesPanel'
+import { PackagingPanel } from '@/components/PackagingPanel'
 
 // Temporary, dev-only preview of the slice 7 cards (ADR 0001), as they will sit in each product view.
 // Delete in slice 4, when the cards move onto the dashboard.
@@ -22,6 +23,7 @@ export default function InsightsPreview() {
           <h1 className="font-display text-xl font-bold">{s.name}</h1>
           <CompetitorPanel sku={s.id} />
           <HypothesesPanel sku={s.id} />
+          <PackagingPanel sku={s.id} />
         </section>
       ))}
     </main>

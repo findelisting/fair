@@ -4,6 +4,7 @@
 // not the live demo.
 import competitorsJson from '@/data/competitors.json'
 import hypothesesJson from '@/data/hypotheses.json'
+import packagingJson from '@/data/packaging.json'
 
 export interface CompetitorSource {
   publisher: string
@@ -145,6 +146,55 @@ const competitorData = load<{ products: CompetitorProduct[]; explore?: ExploreLi
 export const competitors: CompetitorProduct[] = competitorData.products
 export const exploreLinks: ExploreLink[] = competitorData.explore ?? []
 export const hypotheses: Hypothesis[] = load<{ hypotheses: Hypothesis[] }>('hypotheses', hypothesesJson, checkHypotheses).hypotheses
+
+export interface PackagingSource {
+  publisher: string
+  /** One-line takeaway from the source. */
+  note: string
+  url: string
+  accessedOn: string
+}
+
+export interface PackagingIdea {
+  id: string
+  /** Demo SKU id, or "all" for every product. */
+  sku: string
+  statement: string
+  basis: string[]
+  sources: PackagingSource[]
+}
+
+export function checkPackaging(data: unknown, today: Date = new Date()): string[] {
+  const errors: string[] = []
+  const list = (data as { ideas?: unknown })?.ideas
+  if (!Array.isArray(list) || list.length === 0) return ['packaging: "ideas" must be a non-empty array']
+  const todayIso = today.toISOString().slice(0, 10)
+  for (const [i, idea] of (list as Partial<PackagingIdea>[]).entries()) {
+    const at = `packaging[${i}]${idea?.id ? ` (${idea.id})` : ''}`
+    for (const field of ['id', 'sku', 'statement'] as const) {
+      if (!isNonEmptyString(idea?.[field])) errors.push(`${at}: missing ${field}`)
+    }
+    if (!Array.isArray(idea?.basis) || idea.basis.length === 0 || !idea.basis.every(isNonEmptyString)) {
+      errors.push(`${at}: needs a data basis`)
+    }
+    if (!Array.isArray(idea?.sources)) errors.push(`${at}: "sources" must be an array`)
+    for (const [j, s] of (idea?.sources ?? []).entries()) {
+      if (!isNonEmptyString(s?.publisher) || !isNonEmptyString(s?.note)) errors.push(`${at}: source ${j} needs a publisher and a note`)
+      if (!isHttps(s?.url)) errors.push(`${at}: source ${j} needs an https URL`)
+      if (!isNonEmptyString(s?.accessedOn) || !ISO_DATE.test(s.accessedOn) || s.accessedOn > todayIso) {
+        errors.push(`${at}: source ${j} needs a past accessedOn date (YYYY-MM-DD)`)
+      }
+    }
+  }
+  return errors
+}
+
+export const packagingIdeas: PackagingIdea[] = load<{ ideas: PackagingIdea[] }>('packaging', packagingJson, checkPackaging).ideas
+
+/** Packaging ideas for one SKU: its own plus those for "all". */
+export function packagingFor(sku?: string): PackagingIdea[] {
+  return packagingIdeas.filter((i) => !sku || i.sku === 'all' || i.sku === sku)
+}
 
 /** Market context for one SKU (the product view), or everything when no SKU is given. */
 export function insightsFor(sku?: string) {

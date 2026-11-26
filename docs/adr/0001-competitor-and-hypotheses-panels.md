@@ -73,3 +73,16 @@ Decided with the user after the first build.
 - **Related products:** an "Also worth a look" line lists variations and other approaches as links only, with no values, filtered per SKU.
 - **"Useful and accurate?" check:** a one-tap 👍/👎 at the end of each card, shown at most once per card per session, optional, and never worded as a task. Stored anonymously against the card, with no user identity. It needs the dashboard session and the database, so it is built in slice 4.
 - **Empty SKUs:** a card with nothing for the selected SKU is not shown.
+
+## Amendment 3 (2026-11-26): packaging ideas for the branding team
+
+fairafric's marketing contacts are also the branding team, so the product view gets a third card, "Packaging ideas".
+
+- **What:** short, research-backed suggestions about the pack (QR call to action, where codes link to, cocoa % on the front, price per 100 g on shelf talkers, a wrapper A/B test with two codes). Text only: no artwork or mock-ups.
+- **Each idea has:** a one-line statement, a data basis from Finde's data (scans, themes, Market context) and zero or more public sources, each with a one-line takeaway, an https link and an access date.
+- **Label:** every idea carries "Suggestion, not validated". It is offered as research and inspiration, not as a task.
+- **Scope per SKU:** an idea is tied to one SKU or to `all`. The product view shows its own ideas plus the `all` ones.
+- **Format:** the same snippet style as the other cards. One line per idea; the basis and sources are one click away.
+- **Limits:** no sustainability, recyclability or certification claims (APPROACH.md §10). The claim-word check runs on `data/packaging.json` at build time.
+- **Evidence quality:** the sources are a standards body (GS1 UK) and trade press reporting an industry study. No controlled study on QR calls to action was found, so the ideas stay labelled as suggestions.
+- **Optional slice 6 question:** "What packaging changes could lift scans?", answered from the same data.

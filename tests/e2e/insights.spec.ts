@@ -44,3 +44,18 @@ test('the preview page carries the demo banner', async ({ page }) => {
   await page.goto('/preview/insights')
   await expect(page.getByText('Demo prototype, synthetic data').first()).toBeVisible()
 })
+
+test('every packaging idea is labelled, and its sources show a link and date', async ({ page }) => {
+  await page.goto('/preview/insights')
+  const ideas = page.getByTestId('packaging-idea')
+  const count = await ideas.count()
+  expect(count).toBeGreaterThan(0)
+  for (let i = 0; i < count; i++) {
+    await expect(ideas.nth(i).getByTestId('suggestion-label')).toHaveText('Suggestion, not validated')
+  }
+  const sources = page.getByTestId('packaging-source').locator('a')
+  for (let i = 0; i < (await sources.count()); i++) {
+    await expect(sources.nth(i)).toHaveAttribute('href', /^https:\/\//)
+    await expect(sources.nth(i)).toHaveText(/\d{1,2} [A-Z][a-z]{2} \d{4}/)
+  }
+})

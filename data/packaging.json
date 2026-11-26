@@ -1,0 +1,73 @@
+{
+  "ideas": [
+    {
+      "id": "qr-benefit-cta",
+      "sku": "all",
+      "statement": "Put a benefit-led line next to the QR code, e.g. \"Scan for the story behind this bar\".",
+      "basis": ["Scans per wrapper code"],
+      "sources": [
+        {
+          "publisher": "GS1 UK, five ways to increase QR adoption",
+          "note": "Give people a reason to scan; specific prompts beat \"Learn more\".",
+          "url": "https://www.gs1uk.org/knowledge-hub/qr-codes-powered-by-gs1/five-ways-to-increase-consumer-adoption-of-qr-codes-powered",
+          "accessedOn": "2026-11-26"
+        },
+        {
+          "publisher": "GS1 UK, QR design guidelines",
+          "note": "Keep call-to-action text outside the code's quiet zone.",
+          "url": "https://www.gs1uk.org/standards-services/get-market-ready/qr-codes-powered-by-gs1/design-guidelines",
+          "accessedOn": "2026-11-26"
+        }
+      ]
+    },
+    {
+      "id": "qr-product-page",
+      "sku": "all",
+      "statement": "Send each code to its own product page, not the home page.",
+      "basis": ["Page views per scan", "Feedback page views by campaign"],
+      "sources": [
+        {
+          "publisher": "Retail Brew, on a 2026 report of ~8,500 pack codes",
+          "note": "Purpose-built product pages averaged over 7× the scans of plain website redirects.",
+          "url": "https://www.retailbrew.com/stories/nearly-95-of-qr-code-scans-come-from-just-5-of-codes-what-gets-consumers-to-scan",
+          "accessedOn": "2026-11-26"
+        }
+      ]
+    },
+    {
+      "id": "cocoa-front-92",
+      "sku": "dark-92",
+      "statement": "Make \"92%\" the largest text on the front of the wrapper.",
+      "basis": ["Bitterness theme count", "How competitors name their bars (Market context)"],
+      "sources": [
+        {
+          "publisher": "Knuspr listing, Lindt Excellence Mild 90%",
+          "note": "The competitor leads its product name with the cocoa %.",
+          "url": "https://www.knuspr.de/52660-lindt-excellence-mild-90",
+          "accessedOn": "2026-11-26"
+        }
+      ]
+    },
+    {
+      "id": "pack-size-80g",
+      "sku": "creamy-oat",
+      "statement": "Show price per 100 g on shelf talkers: the 80 g bar sits next to 100 g bars.",
+      "basis": ["Pack sizes in Market context", "Scans by campaign (shelf talker)"],
+      "sources": [
+        {
+          "publisher": "dm listing, Vivani Dark 60%",
+          "note": "Comparable bar sold at 80 g with price per kg shown.",
+          "url": "https://www.dm.de/p/d/3154081/",
+          "accessedOn": "2026-11-26"
+        }
+      ]
+    },
+    {
+      "id": "wrapper-ab-test",
+      "sku": "all",
+      "statement": "Test two wrapper designs in one market, each with its own code, and compare scans.",
+      "basis": ["Scans per code and market (Finde)"],
+      "sources": []
+    }
+  ]
+}
