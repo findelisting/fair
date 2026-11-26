@@ -1,0 +1,3 @@
+# Supabase CLI config for the demo project. Migrations live in supabase/migrations.
+# Remote changes go through `npm run db:push`, which checks the project first.
+project_id = "finde-fairafric-demo"

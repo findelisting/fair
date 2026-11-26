@@ -32,14 +32,14 @@ The model follows SPEC.md section 4, with additions that close the gaps. All tim
 
 | Table | Fields | Notes |
 |---|---|---|
-| `skus` | id, name, variety, format, collection_id, status | 3 seeded SKUs |
+| `skus` | id, name, variety, format, description, status | 3 seeded SKUs. Collection membership lives only in `collection_skus`, so there is one source of truth |
 | `collections` | id, name | 1 seeded collection |
 | `collection_skus` | collection_id, sku_id | A collection points to several SKUs |
 | `markets` | code (DE, AT, CH, FR, UK, GH, CZ, SK), name | |
 | `campaigns` | id, name, channel (wrapper, shelf talker, influencer, trade fair), start, end | |
 | `codes` | id (short slug), target_type (product, feedback, shop, collection), sku_id or collection_id, **campaign_id**, **market**, status | **Added:** each code carries its campaign and market |
-| `scan_events` | ts, code_id, sku_id, collection_id, campaign_id, market, device_type, language, is_bot | No IP address stored |
-| `page_views` | ts, page (product, feedback, collection), sku_id, campaign_id, market | **Added:** counted on the server, no cookies. Supplies agent question 2 |
+| `scan_events` | ts, code_id, sku_id, collection_id, campaign_id, market, device_type, language, is_bot, **source** (live or synthetic) | No IP address stored. **Added:** `source`, because slice 5 adds synthetic scan history and the Live badge must stay true |
+| `page_views` | ts, page (product, feedback, collection), sku_id, collection_id, campaign_id, market, **source** | **Added:** counted on the server, no cookies. Supplies agent question 2 |
 | `feedback` | ts, sku_id, campaign_id, market, rating, taste_note, free_text, themes, **source** (live or synthetic) | **Added:** `source` keeps live and synthetic rows apart. Free text capped at 500 characters |
 | `web_aggregates` | date, sku_id, campaign_id, market, sessions, page_views, video_plays, shop_clicks | Mock connector. Always synthetic |
 

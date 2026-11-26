@@ -41,7 +41,7 @@ lib/
   supabaseServer.ts          server-only Supabase client (service-role key)
   redirect.ts                redirect logic, testable with a fake store and clock
   rateLimit.ts               in-memory limiter (adapted from Finde)
-  securityHeaders.ts         adapted from Finde, no video frame sources
+  (security headers live in next.config.ts, adapted from Finde, no video frame sources)
   ua.ts                      device type, language, bot detection
   tracking.ts                scan and page-view writes, fail open
   themes.ts                  taste note to theme mapping

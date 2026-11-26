@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+/* Finde design tokens, same hex values as the Finde frontend (app/globals.css). */
+@theme {
+  --color-brand: #C9A84C;
+  --color-brand-hover: #E9C46A;
+  --color-green: #0F6E56;
+  --color-green-deep: #0B5546;
+  --color-canvas: #EEF2ED;
+  --color-surface: #FFFFFF;
+  --color-line: #E8DDD0;
+  --color-ink: #2B2420;
+  --color-ink-secondary: #6B5E55;
+  --color-ink-tertiary: #8A7D73;
+  --color-night: #0B2B24;
+  --color-night-raised: #123A30;
+  --color-gold: #C9A84C;
+  --color-ivory: #F4F2EA;
+  --color-mist: #B9CBC3;
+  --color-mint: #6FCFA8;
+  --color-synthetic: #7A4FB5;
+  --color-synthetic-surface: #F3EEFA;
+
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
+}
+
+html {
+  font-family: var(--font-body);
+  background: var(--color-canvas);
+  color: var(--color-ink);
+}
