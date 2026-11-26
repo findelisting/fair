@@ -112,6 +112,8 @@ Done when:
 
 ## Slice 2: QR redirect and scan log (M)
 
+> **Superseded (ADR 0002 accepted 2026-11-26):** the detailed design, stress test and tests for this slice are in [docs/adr/0002-qr-redirect-and-scan-log.md](docs/adr/0002-qr-redirect-and-scan-log.md) and [docs/specs/slice-2-qr-redirect.md](docs/specs/slice-2-qr-redirect.md). The task list below is the original sketch.
+
 Tasks:
 - Write `lib/ua.ts`:
   - Device type: mobile, tablet or desktop.
@@ -152,7 +154,7 @@ Tasks:
   - Check SKU, campaign and market against the database, check the field values, and apply the rate limiter and honeypot.
   - Store the answer with its themes and `source = live`, then show a thank-you state.
 - Write `lib/tracking.ts`. Product, collection and feedback pages record a server-side page view, with no cookies, and fail open.
-- Build the `/code-inactive` page.
+- Style the `/code-inactive` page (a minimal version is built in slice 2, see ADR 0002).
 - Mobile layout first. These pages are opened from a phone scan.
 - End-to-end test: scan to product page to feedback submit, then check the stored row.
 
