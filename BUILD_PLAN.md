@@ -188,6 +188,7 @@ Tasks:
   - Panels for scans, page views and feedback, each with a `DataBadge`.
   - Polls every 5 seconds. If a poll fails, keep the last data and show "Reconnecting".
 - Charts: simple bars and lines. Keep them light.
+- Gate `/dashboard/codes` (slice 8) with the demo password and remove its dev-only `notFound()` guard (ADR 0004).
 - Product view: place `CompetitorPanel`, `HypothesesPanel` and `PackagingPanel` with the selected `sku` (ADR 0001, amendment 2). Delete `app/preview/insights` and point `tests/e2e/insights.spec.ts` at the dashboard.
 - "Useful and accurate?" check: one-tap thumbs up or down at the end of each insight card, at most once per card per session, optional. Store card id, answer and timestamp only, no user identity (ADR 0001, amendment 2).
 - Panels start empty until slice 5 adds synthetic data. Each panel shows a clear `EmptyState`.
@@ -251,6 +252,8 @@ Tasks:
 - `dashboard/codes`: a printable page with one QR image per code. Use the `qrcode` package, built from `PUBLIC_BASE_URL`.
 - Each QR shows its label (SKU or collection, campaign, market) and a "Demo only" note.
 - The page warns if `PUBLIC_BASE_URL` is a localhost or preview URL.
+
+Built per [ADR 0004](docs/adr/0004-qr-sheet.md) and [the slice 8 spec](docs/specs/slice-8-qr-sheet.md): fairafric logo on a white centre pad (official file at `public/brand/fairafric-logo.svg`, placeholder until supplied), level H, every code decoded by a `jsQR` browser test. Dev-only until slice 4 gates `/dashboard`.
 
 Done when: a printed sheet scans correctly from a phone against the deployed URL.
 
