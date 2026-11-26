@@ -216,6 +216,7 @@ Done when (checkpoint B):
 - Every synthetic panel carries the Synthetic data badge.
 
 ## Slice 6: Product agent (M)
+> **Superseded once ADR 0006 is accepted:** design, stress test and tests are in [docs/adr/0006-product-agent.md](docs/adr/0006-product-agent.md) and [docs/specs/slice-6-product-agent.md](docs/specs/slice-6-product-agent.md). Four questions; the fourth is "What do comparable dark bars cost?". The task list below is the original sketch.
 
 Tasks:
 - Migration: one SQL function per agent question.
