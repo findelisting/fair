@@ -1,6 +1,6 @@
 # Spec: slice 6, product agent
 
-- Status: Draft, waiting for ADR 0006 to be accepted
+- Status: Accepted (2026-11-26), ADR 0006 accepted
 - Decision record: [ADR 0006](../adr/0006-product-agent.md)
 - Replaces: BUILD_PLAN.md slice 6 task list
 - Build rule: the tests in section 7 are written first and fail, then the code makes them pass.

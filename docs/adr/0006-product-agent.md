@@ -1,6 +1,6 @@
 # ADR 0006: Product agent (slice 6), counting in the database
 
-- Status: Proposed (2026-11-26)
+- Status: Accepted (2026-11-26)
 - Date: 2026-11-26
 - Scope: BUILD_PLAN.md slice 6, CLAUDE.md scope item 8, SPEC.md §6 ("Every agent answer lists its sources"). The dashboard itself (slice 4) belongs to the other session; this slice delivers the agent logic, its API and a panel component the dashboard drops in.
 - Spec: [docs/specs/slice-6-product-agent.md](../specs/slice-6-product-agent.md)
