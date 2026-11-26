@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { fallbackCode, seedPayload } from '../../lib/catalog'
+import { collectionById, fallbackCode, isCampaign, isMarket, seedPayload, skuById, skusInCollection } from '../../lib/catalog'
 import { seedPayload as scriptsPayload } from '../../scripts/seedData'
 
 // Spec: docs/specs/slice-2-qr-redirect.md section 7.4
@@ -24,4 +24,20 @@ test('U-CAT-2: fallbackCode returns null for an unknown code', () => {
 
 test('U-CAT-3: the scripts re-export the same catalogue', () => {
   expect(scriptsPayload).toBe(seedPayload)
+})
+
+test('U-CAT-4: skusInCollection returns the members in position order', () => {
+  expect(skusInCollection('vegan-creamy').map((s) => s.id)).toEqual(['creamy-oat', 'creamy-hazelnut'])
+})
+
+test('U-CAT-5: unknown SKU or collection is null, known ones are found', () => {
+  expect(skuById('dark-92')?.name).toBe('Dark 92%')
+  expect(skuById('nope')).toBeNull()
+  expect(collectionById('vegan-creamy')?.name).toBe('Vegan Creamy line')
+  expect(collectionById('nope')).toBeNull()
+  expect(skusInCollection('nope')).toEqual([])
+  expect(isCampaign('wrapper-2026')).toBe(true)
+  expect(isCampaign('nope')).toBe(false)
+  expect(isMarket('AT')).toBe(true)
+  expect(isMarket('at')).toBe(false)
 })

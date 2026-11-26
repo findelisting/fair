@@ -44,6 +44,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // The browser tests run a second dev server (database down) with its own build folder,
+  // so the two servers never share .next (see playwright.config.ts).
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   poweredByHeader: false,
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

@@ -16,7 +16,8 @@ After a scan, the phone shows a clear product, collection or feedback page withi
 | `lib/themes.ts` | **New.** The fixed taste-note choices and their themes |
 | `lib/feedback.ts` | **New.** `validateFeedback(form)`, `redactContacts(text)`. Pure logic, no imports from `server-only` code |
 | `lib/params.ts` | **New.** `cleanParams(searchParams)`: keeps only known campaign IDs and market codes |
-| `lib/pageViews.ts` | **New.** `shouldCountView(headers)` (pure) and `recordPageView(...)` (server-only, fail open) |
+| `lib/pageViews.ts` | **New.** `shouldCountView(headers)` (pure, unit-tested) |
+| `lib/recordPageView.ts` | **New.** `trackPageView(...)`: server-only write inside `after()`, fail open. Split from `lib/pageViews.ts` during the build so unit tests never import server-only code |
 | `lib/catalog.ts` | Add lookups: `skuById`, `collectionById`, `skusInCollection`, `isCampaign`, `isMarket` |
 | `app/p/[sku]/page.tsx` | **New.** Product page |
 | `app/c/[collection]/page.tsx` | **New.** Collection page |

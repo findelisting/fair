@@ -188,6 +188,7 @@ The full checklist goes into DEMO_SCRIPT.md (slice 11).
 - **Day before:** open the dashboard to wake the database. Run `npm run reset`. Scan every printed code once and check that it appears. Then reset again.
 - **One hour before:** check the dashboard loads. Charge the phone. Turn on mobile data as a fallback. Open the backup screenshots on the laptop.
 - **During:** if the live scan fails, switch to the second phone or the screenshots and keep going.
+- **Never run `npm run test:e2e` on demo day after the final reset.** Its cleanup deletes all live page views created since the test run started (ADR 0003, decision 11).
 
 ## 17. Open questions
 

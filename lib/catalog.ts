@@ -133,3 +133,39 @@ const FALLBACK: ReadonlyMap<string, CodeTarget> = new Map(
 export function fallbackCode(slug: string): CodeTarget | null {
   return FALLBACK.get(slug) ?? null
 }
+
+// Lookups for the public pages (ADR 0003, decision 2): content comes from this static
+// catalogue, so the pages render even when the database is down.
+
+export type CatalogSku = SeedPayload['skus'][number]
+export type CatalogCollection = SeedPayload['collections'][number]
+
+const SKUS = new Map(seedPayload.skus.map((s) => [s.id, s]))
+const COLLECTIONS = new Map(seedPayload.collections.map((c) => [c.id, c]))
+const CAMPAIGNS = new Set(seedPayload.campaigns.map((c) => c.id))
+const MARKETS = new Set(seedPayload.markets.map((m) => m.code))
+
+export function skuById(id: string): CatalogSku | null {
+  return SKUS.get(id) ?? null
+}
+
+export function collectionById(id: string): CatalogCollection | null {
+  return COLLECTIONS.get(id) ?? null
+}
+
+/** Members of a collection in position order. Empty for an unknown collection. */
+export function skusInCollection(id: string): CatalogSku[] {
+  return seedPayload.collection_skus
+    .filter((cs) => cs.collection_id === id)
+    .sort((a, b) => a.position - b.position)
+    .map((cs) => SKUS.get(cs.sku_id))
+    .filter((s): s is CatalogSku => Boolean(s))
+}
+
+export function isCampaign(id: string): boolean {
+  return CAMPAIGNS.has(id)
+}
+
+export function isMarket(code: string): boolean {
+  return MARKETS.has(code)
+}
