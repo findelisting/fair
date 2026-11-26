@@ -44,15 +44,20 @@ test('E-RD-1 and E-RD-2: every seeded code redirects correctly and records one l
   for (const code of seedPayload.codes) {
     const res = await request.get(`/r/${code.id}`, { headers: HEADERS, maxRedirects: 0 })
     expect(res.status(), code.id).toBe(302)
-    expect(res.headers()['x-finde-scan'], code.id).toBe('recorded')
+    // 'late': the write took longer than the 800 ms budget (cold dev server under a full test run) and
+    // finishes after the response (ADR 0002). Both end with exactly one row, checked below.
+    expect(['recorded', 'late'], code.id).toContain(res.headers()['x-finde-scan'])
     expect(new URL(res.headers()['location']).pathname + new URL(res.headers()['location']).search, code.id).toBe(expectedPath(code))
   }
   for (const code of seedPayload.codes) {
-    const { data, error } = await testDb()
-      .from('scan_events')
-      .select('sku_id, collection_id, campaign_id, market, source, is_bot, device_type')
-      .eq('code_id', code.id)
-      .eq('language', E2E_LANGUAGE)
+    const rows = () =>
+      testDb()
+        .from('scan_events')
+        .select('sku_id, collection_id, campaign_id, market, source, is_bot, device_type')
+        .eq('code_id', code.id)
+        .eq('language', E2E_LANGUAGE)
+    await expect.poll(async () => (await rows()).data?.length ?? 0, { message: code.id, timeout: 10_000 }).toBe(1)
+    const { data, error } = await rows()
     expect(error).toBeNull()
     expect(data, code.id).toHaveLength(1)
     expect(data![0]).toEqual({

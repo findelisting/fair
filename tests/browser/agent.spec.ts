@@ -1,12 +1,17 @@
 import { expect, test } from '@playwright/test'
+import { signInContext } from '../e2e/support/auth'
 
-// Spec: docs/specs/slice-6-product-agent.md section 7.3. Dev-only preview until slice 4 embeds the panel.
+// Spec: docs/specs/slice-6-product-agent.md section 7.3. The panel sits in the dashboard (ADR 0007, decision 7).
+
+test.beforeEach(async ({ context, request, baseURL }) => {
+  await signInContext(context, request, baseURL!)
+})
 
 test.describe('JavaScript off', () => {
   test.use({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } })
 
   test('B-AG-1: each question shows an answer with dated sources', async ({ page }) => {
-    await page.goto('/preview/agent')
+    await page.goto('/dashboard')
     const questions = [
       'Which packaging had the most scans in Austria?',
       'Which campaign drove visits to the feedback page?',
@@ -24,16 +29,16 @@ test.describe('JavaScript off', () => {
   })
 
   test('B-AG-3: the panel fits a 390 px phone', async ({ page }) => {
-    await page.goto('/preview/agent?ask=top-packaging-at')
+    await page.goto('/dashboard?ask=top-packaging-at')
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
     expect(overflow).toBeLessThanOrEqual(0)
   })
 })
 
 test('B-AG-2: question links are built by the host page, so its filters stay', async ({ page }) => {
-  await page.goto('/preview/agent?market=AT')
+  await page.goto('/dashboard?market=AT')
   await expect(page.getByRole('link', { name: 'Which theme comes up most for the 92% bar?' })).toHaveAttribute(
     'href',
-    '/preview/agent?market=AT&ask=top-theme-dark-92',
+    '/dashboard?view=product&id=dark-92&market=AT&ask=top-theme-dark-92',
   )
 })

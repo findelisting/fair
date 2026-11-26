@@ -1,8 +1,14 @@
 import { expect, test } from '@playwright/test'
 import path from 'node:path'
+import { signInContext } from '../e2e/support/auth'
 
-// Slice 8 (ADR 0004, spec docs/specs/slice-8-qr-sheet.md). Dev-only page, so skipped against a deployed URL.
-test.skip(!!process.env.E2E_BASE_URL, 'The QR sheet is dev-only until slice 4')
+// Slice 8 (ADR 0004, spec docs/specs/slice-8-qr-sheet.md). Behind the demo password since slice 4 (ADR 0007).
+// Skipped against a deployed URL: there the sheet is print-ready, and these checks expect the dev warning.
+test.skip(!!process.env.E2E_BASE_URL, 'Checks the dev (test address) state of the sheet')
+
+test.beforeEach(async ({ context, request, baseURL }) => {
+  await signInContext(context, request, baseURL!)
+})
 
 const JSQR = path.join(process.cwd(), 'node_modules', 'jsqr', 'dist', 'jsQR.js')
 

@@ -1,19 +1,16 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { headers } from 'next/headers'
-import { notFound } from 'next/navigation'
 import { AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { buildSheet, checkBaseUrl } from '@/lib/qrSheet'
 import { PrintButton } from './PrintButton'
 
-// Printable QR sheet (slice 8, ADR 0004). Dev-only until slice 4 puts /dashboard behind the demo password (Q-8).
+// Printable QR sheet (slice 8, ADR 0004). Behind the demo password via proxy.ts (ADR 0007, decision 6).
 export const dynamic = 'force-dynamic'
 
 const LOGO_PUBLIC_PATH = '/brand/fairafric-logo.svg'
 
 export default async function CodesSheet() {
-  if (process.env.NODE_ENV === 'production') notFound()
-
   // Q-6: PUBLIC_BASE_URL when set; in dev without it, the request's own origin (always flagged as a test address).
   const h = await headers()
   const host = h.get('host')
