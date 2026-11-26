@@ -4,6 +4,7 @@
 import './env'
 import { adminClient } from './adminClient'
 import { seedPayload, validateSeed } from './seedData'
+import { loadSynthetic } from './synthetic'
 
 async function main() {
   const problems = validateSeed(seedPayload)
@@ -20,6 +21,8 @@ async function main() {
     process.exitCode = 1
     return
   }
+
+  if (!(await loadSynthetic(client))) process.exitCode = 1
 
   const counts: string[] = []
   for (const table of ['skus', 'collections', 'markets', 'campaigns', 'codes', 'scan_events', 'feedback']) {

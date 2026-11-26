@@ -1,7 +1,9 @@
-// npm run seed: upserts the demo catalogue. Deletes nothing (use npm run reset for a clean start).
+// npm run seed: upserts the demo catalogue, then replaces the synthetic history (live rows kept).
+// Use npm run reset for a clean start.
 import './env'
 import { adminClient } from './adminClient'
 import { seedPayload, validateSeed } from './seedData'
+import { loadSynthetic } from './synthetic'
 
 async function main() {
   const problems = validateSeed(seedPayload)
@@ -21,6 +23,7 @@ async function main() {
     `Seeded project ${ref}: ${seedPayload.skus.length} SKUs, ${seedPayload.collections.length} collection, ` +
       `${seedPayload.markets.length} markets, ${seedPayload.campaigns.length} campaigns, ${seedPayload.codes.length} codes.`,
   )
+  if (!(await loadSynthetic(client))) process.exitCode = 1
 }
 
 main()
