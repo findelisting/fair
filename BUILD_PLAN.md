@@ -138,6 +138,8 @@ Done when:
 
 ## Slice 3: Public pages and feedback (M)
 
+> **Superseded (ADR 0003 accepted 2026-11-26):** the design, stress test and tests for this slice are in [docs/adr/0003-public-pages-and-feedback.md](docs/adr/0003-public-pages-and-feedback.md) and [docs/specs/slice-3-public-pages-and-feedback.md](docs/specs/slice-3-public-pages-and-feedback.md). The feedback form uses a Server Action, not `/api/feedback`. The task list below is the original sketch.
+
 Tasks:
 - Product page `/p/[sku]`:
   - Demo content and a placeholder image.
