@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils'
 
-/** Neutral placeholder for the fairafric logo until the brand sends the file (design brief). */
+/** Plain placeholder for the fairafric logo until the brand sends the file (design brief). */
 export function LogoSlot({ tone = 'dark', className }: { tone?: 'dark' | 'light'; className?: string }) {
   return (
     <span

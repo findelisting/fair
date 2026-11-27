@@ -24,3 +24,9 @@ Each criterion from SPEC.md section 6 (and CLAUDE.md), how it is met, and how to
 | No cookies or trackers on public pages | No `Set-Cookie` on public routes; CSP `img-src 'self'` | Done; `tests/browser/hardening.spec.ts` |
 | No compliance or certification claims | Claim-word check on research data and synthetic text | Done; `tests/unit/hardening.spec.ts` and `docs/LABEL_AUDIT.md` |
 | README, seed script, demo script | `README.md`, `DEMO_SCRIPT.md` | Done |
+
+## Added after the SPEC
+
+| Item | How it is met | Status |
+|---|---|---|
+| Data sources panel: what feeds the dashboard and what a pilot could connect (ADR 0009) | Static list in `lib/dataSources.ts`; each available source is labelled "Demo: not connected"; "Request" opens a note, nothing is stored or sent | Done; `tests/unit/dataSources.spec.ts`, `tests/browser/dashboard.spec.ts` (DS-5) |

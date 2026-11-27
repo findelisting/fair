@@ -54,7 +54,6 @@ export async function passwordMatches(input: string, expected: string | undefine
  */
 export function safeNext(next: string | null | undefined): string {
   const fallback = '/dashboard'
-  // eslint-disable-next-line no-control-regex
   if (!next || /[\u0000-\u001F\u007F]/.test(next)) return fallback
   if (!next.startsWith('/') || next.startsWith('//') || next.startsWith('/\\')) return fallback
   const base = 'https://same-origin.invalid'

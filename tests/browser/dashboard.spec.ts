@@ -36,6 +36,25 @@ test.describe('signed in', () => {
     await expect(page.getByTestId('panel-feedback')).toContainText('bitterness')
   })
 
+  test('DS-5: data sources panel labels every source and Request opens the pilot note', async ({ page }) => {
+    for (const path of ['/dashboard', '/dashboard?view=collection&id=vegan-creamy']) {
+      await page.goto(path)
+      const panel = page.getByTestId('data-sources-panel')
+      await expect(panel).toBeVisible()
+      await expect(panel.getByTestId('source-connected')).toHaveCount(3)
+      const available = panel.getByTestId('source-available')
+      const n = await available.count()
+      expect(n).toBeGreaterThanOrEqual(4)
+      await expect(available.filter({ hasText: 'Demo: not connected' })).toHaveCount(n)
+    }
+    await page.getByRole('link', { name: 'Data sources' }).click()
+    await expect(page).toHaveURL(/#data-sources$/)
+    const first = page.getByTestId('source-available').first()
+    await expect(first.getByTestId('source-note')).toBeHidden()
+    await first.getByText('Request').click()
+    await expect(first.getByTestId('source-note')).toContainText('Not connected in this demo')
+  })
+
   test('a test scan shows on the open dashboard within 10 seconds', async ({ page, request }) => {
     await page.goto('/dashboard?view=product&id=dark-92&market=AT')
     const live = page.getByTestId('scan-live')

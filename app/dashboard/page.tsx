@@ -1,7 +1,8 @@
 import Link from 'next/link'
-import { ArrowLeft, QrCode } from 'lucide-react'
+import { ArrowLeft, Plug, QrCode } from 'lucide-react'
 import { AgentPanel } from '@/components/AgentPanel'
 import { CompetitorPanel } from '@/components/CompetitorPanel'
+import { DataSourcesPanel } from '@/components/DataSourcesPanel'
 import { HypothesesPanel } from '@/components/HypothesesPanel'
 import { PackagingPanel } from '@/components/PackagingPanel'
 import { InsightCheck } from '@/components/dashboard/InsightCheck'
@@ -72,7 +73,11 @@ export default async function Dashboard({ searchParams }: { searchParams: SP }) 
         <button type="submit" className="min-h-11 rounded-full bg-green px-5 text-sm font-semibold text-white transition-colors hover:bg-green-deep">
           Apply
         </button>
-        <Link href="/dashboard/codes" className="ml-auto inline-flex min-h-11 items-center gap-1.5 rounded-full px-4 text-sm font-semibold text-green-deep ring-1 ring-inset ring-line transition-colors hover:bg-canvas">
+        <a href="#data-sources" className="ml-auto inline-flex min-h-11 items-center gap-1.5 rounded-full px-4 text-sm font-semibold text-green-deep ring-1 ring-inset ring-line transition-colors hover:bg-canvas">
+          <Plug aria-hidden className="h-4 w-4" />
+          Data sources
+        </a>
+        <Link href="/dashboard/codes" className="inline-flex min-h-11 items-center gap-1.5 rounded-full px-4 text-sm font-semibold text-green-deep ring-1 ring-inset ring-line transition-colors hover:bg-canvas">
           <QrCode aria-hidden className="h-4 w-4" />
           QR codes
         </Link>
@@ -104,6 +109,8 @@ export default async function Dashboard({ searchParams }: { searchParams: SP }) 
           )}
         </section>
       )}
+
+      <DataSourcesPanel />
     </main>
   )
 }
