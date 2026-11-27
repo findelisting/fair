@@ -5,12 +5,16 @@ import type { DataKind } from '@/components/DataBadge'
 import type { Source } from '@/components/SourceList'
 import { displayValue, formatAccessDate, type CompetitorProduct } from './insights'
 
+// scope: what each answer covers, shown with the answer, because the dashboard filters do not apply to it (ADR 0011).
 export const QUESTIONS = [
-  { id: 'top-packaging-at', question: 'Which packaging had the most scans in Austria?' },
-  { id: 'feedback-visits-by-campaign', question: 'Which campaign drove visits to the feedback page?' },
-  { id: 'top-theme-dark-92', question: 'Which theme comes up most for the 92% bar?' },
-  { id: 'comparable-dark-bars', question: 'What do comparable dark bars cost?' },
+  { id: 'top-packaging-at', question: 'Which packaging had the most scans in Austria?', scope: 'Austria · all bars and campaigns' },
+  { id: 'feedback-visits-by-campaign', question: 'Which campaign drove visits to the feedback page?', scope: 'All markets and campaigns' },
+  { id: 'top-theme-dark-92', question: 'Which theme comes up most for the 92% bar?', scope: 'Dark 92% · all markets and campaigns' },
+  { id: 'comparable-dark-bars', question: 'What do comparable dark bars cost?', scope: 'Public listings, with their dates' },
 ] as const
+
+/** Questions that span products, so they also fit the collection view (ADR 0011). */
+export const COLLECTION_QUESTIONS = ['top-packaging-at', 'feedback-visits-by-campaign'] as const
 
 export type QuestionId = (typeof QUESTIONS)[number]['id']
 export type DataQuestionId = Exclude<QuestionId, 'comparable-dark-bars'>
@@ -92,10 +96,10 @@ export function kindOf(live: number, synthetic: number): DataKind | undefined {
   return undefined
 }
 
-const DATA_SOURCES: Record<DataQuestionId, { name: string; filter: string }> = {
-  'top-packaging-at': { name: 'QR scans', filter: 'Market Austria, bots excluded' },
-  'feedback-visits-by-campaign': { name: 'Feedback page visits', filter: 'Feedback page only' },
-  'top-theme-dark-92': { name: 'Feedback answers', filter: 'Dark 92% bar' },
+const DATA_SOURCES: Record<DataQuestionId, { name: string; filter: string; unit: string }> = {
+  'top-packaging-at': { name: 'QR scans', filter: 'Austria, bot scans left out', unit: 'scans' },
+  'feedback-visits-by-campaign': { name: 'Feedback page visits', filter: 'Feedback page only', unit: 'visits' },
+  'top-theme-dark-92': { name: 'Feedback answers', filter: 'Dark 92% bar', unit: 'answers' },
 }
 
 function sentence(id: DataQuestionId, rows: AgentRow[]): string {
@@ -123,8 +127,8 @@ export function buildAnswer(id: DataQuestionId, rows: AgentRow[], asOf: Date): A
   const first = rows.reduce<string | null>((m, r) => (r.first_ts && (!m || r.first_ts < m) ? r.first_ts : m), null)
   const last = rows.reduce<string | null>((m, r) => (r.last_ts && (!m || r.last_ts > m) ? r.last_ts : m), null)
   const range = formatRange(first, last)
-  const { name, filter } = DATA_SOURCES[id]
-  const detail = [filter, `${formatCount(total)} rows (${formatCount(live)} live, ${formatCount(synthetic)} synthetic)`, range]
+  const { name, filter, unit } = DATA_SOURCES[id]
+  const detail = [filter, `${formatCount(total)} ${unit} (${formatCount(live)} live, ${formatCount(synthetic)} synthetic)`, range]
     .filter(Boolean)
     .join(' · ')
   return {

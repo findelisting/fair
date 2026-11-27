@@ -3,7 +3,6 @@ import { ArrowLeft, Plug, QrCode } from 'lucide-react'
 import { AgentPanel } from '@/components/AgentPanel'
 import { CompetitorPanel } from '@/components/CompetitorPanel'
 import { DataSourcesPanel } from '@/components/DataSourcesPanel'
-import { EvidenceLegend } from '@/components/EvidenceLegend'
 import { HypothesesPanel } from '@/components/HypothesesPanel'
 import { PackagingPanel } from '@/components/PackagingPanel'
 import { InsightCheck } from '@/components/dashboard/InsightCheck'
@@ -12,7 +11,7 @@ import { seedPayload } from '@/lib/catalog'
 import { dashboardQuery, insightCardId, parseDashboardParams, type DashboardSummary } from '@/lib/dashboard'
 import { getDashboard } from '@/lib/dashboardData'
 import { insightsFor, packagingFor } from '@/lib/insights'
-import type { QuestionId } from '@/lib/agent'
+import { COLLECTION_QUESTIONS, type QuestionId } from '@/lib/agent'
 
 // Dashboard (slice 4, ADR 0007). Behind the demo password (proxy.ts).
 // The server renders the shell, the filters and the insight cards with the first numbers filled in;
@@ -84,11 +83,14 @@ export default async function Dashboard({ searchParams }: { searchParams: SP }) 
         </Link>
       </form>
 
-      <EvidenceLegend />
-
       <LivePanels key={query} query={query} view={params.view} initial={initial} collectionId={isProduct ? undefined : params.id} />
 
-      <AgentPanel ask={sp.ask} hrefFor={hrefFor} />
+      <AgentPanel
+        ask={sp.ask}
+        hrefFor={hrefFor}
+        questionIds={isProduct ? undefined : COLLECTION_QUESTIONS}
+        filtersActive={Boolean(params.market || params.campaign)}
+      />
 
       {isProduct && (
         <section className="grid items-start gap-4 md:grid-cols-3" aria-label="Research and ideas">

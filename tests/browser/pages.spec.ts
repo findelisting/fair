@@ -39,6 +39,21 @@ test('B-PG-1: product page shows the product and demo buttons', async ({ page })
   await expect(page.locator('video, iframe')).toHaveCount(0)
 })
 
+test('UX-9: product page shows a labelled demo story and a text wordmark, no logo placeholder', async ({ page }) => {
+  await page.goto(PRODUCT)
+  await expect(page.getByTestId('product-story')).toContainText('Made in Ghana')
+  await expect(page.getByText('Demo content')).toBeVisible()
+  await expect(page.getByTestId('brand-wordmark')).toHaveText('fairafric')
+  await expect(page.getByText('fairafric logo')).toHaveCount(0)
+})
+
+test('UX-10: the thanks page offers Shop and Watch the story', async ({ page }) => {
+  await page.goto('/f/dark-92/thanks?sku=dark-92&campaign=wrapper-2026&market=AT')
+  const next = page.getByTestId('thanks-next')
+  await expect(next.getByTestId('brand-link')).toHaveCount(2)
+  await expect(next.getByRole('link', { name: /Shop/ })).toHaveAttribute('rel', /noopener/)
+})
+
 test('B-PG-2: a shop code highlights the shop button', async ({ page }) => {
   await page.goto(`${DEMO_PRODUCT}&intent=shop`)
   await expect(page.getByRole('button', { name: /^shop/i })).toHaveAttribute('data-highlight', 'true')

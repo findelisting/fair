@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import {
+  COLLECTION_QUESTIONS,
   QUESTIONS,
   buildAnswer,
   buildPriceAnswer,
@@ -76,11 +77,11 @@ test('U-AG-4: a tie at the top names both', () => {
   }
 })
 
-test('U-AG-5: no rows says so and shows 0 rows in the sources', () => {
+test('U-AG-5: no rows says so and shows 0 answers in the sources', () => {
   const a = buildAnswer('top-theme-dark-92', [], AS_OF)
   expect(a.answer).toBe('Not enough data yet for this question.')
   expect(a.sources).toHaveLength(1)
-  expect(a.sources[0].detail).toContain('0 rows')
+  expect(a.sources[0].detail).toContain('0 answers')
   expect(a.counts).toEqual({ live: 0, synthetic: 0 })
 })
 
@@ -93,7 +94,7 @@ test('U-AG-6: the badge follows the kind of rows used', () => {
 test('U-AG-7: the source names the table, filter, row split and date range', () => {
   const s = buildAnswer('top-packaging-at', SCANS, AS_OF).sources[0]
   expect(s.name).toBe('QR scans')
-  expect(s.detail).toBe('Market Austria, bots excluded · 610 rows (2 live, 608 synthetic) · 28 Sep to 26 Nov 2026')
+  expect(s.detail).toBe('Austria, bot scans left out · 610 scans (2 live, 608 synthetic) · 28 Sep to 26 Nov 2026')
   expect(buildAnswer('feedback-visits-by-campaign', VISITS, AS_OF).sources[0].name).toBe('Feedback page visits')
   expect(buildAnswer('top-theme-dark-92', THEMES, AS_OF).sources[0].name).toBe('Feedback answers')
   expect(buildAnswer('top-packaging-at', SCANS, AS_OF).counts).toEqual({ live: 2, synthetic: 608 })
@@ -139,4 +140,9 @@ test('U-AG-12: numbers use English grouping', () => {
   expect(formatCount(12)).toBe('12')
   const big = buildAnswer('top-packaging-at', [row('a', 'Alpha', 0, 1234), row('b', 'Beta', 0, 10)], AS_OF).answer
   expect(big).toContain('1,234')
+})
+
+test('UX-4: every question states its scope, and only spanning questions show in the collection view', () => {
+  for (const q of QUESTIONS) expect(q.scope.trim(), q.id).not.toBe('')
+  expect(COLLECTION_QUESTIONS).toEqual(['top-packaging-at', 'feedback-visits-by-campaign'])
 })

@@ -1,17 +1,16 @@
 import { cn } from '@/lib/utils'
 
-/** Plain placeholder for the fairafric logo until the brand sends the file (design brief). */
+/**
+ * Plain text wordmark until the brand sends its logo file (ADR 0011). Set in the demo's own display font,
+ * with no shapes or colours taken from the brand's logo, so it never imitates the real mark.
+ */
 export function LogoSlot({ tone = 'dark', className }: { tone?: 'dark' | 'light'; className?: string }) {
   return (
     <span
-      data-testid="logo-slot"
-      className={cn(
-        'inline-flex h-9 w-32 items-center justify-center rounded-lg border border-dashed text-xs font-medium',
-        tone === 'dark' ? 'border-cream/40 text-cream/80' : 'border-ink-tertiary text-ink-tertiary',
-        className,
-      )}
+      data-testid="brand-wordmark"
+      className={cn('font-display text-2xl font-extrabold lowercase tracking-tight', tone === 'dark' ? 'text-cream' : 'text-ink', className)}
     >
-      fairafric logo
+      fairafric
     </span>
   )
 }

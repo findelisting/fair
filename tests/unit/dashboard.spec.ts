@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { badgeKind, checkApiParams, INSIGHT_CARD_IDS, normalizeSummary, parseDashboardParams, trimComment } from '@/lib/dashboard'
+import { badgeKind, breakdownsToShow, checkApiParams, headlineNumbers, INSIGHT_CARD_IDS, newLiveScan, normalizeSummary, parseDashboardParams, trimComment } from '@/lib/dashboard'
 
 // Slice 4 dashboard logic (ADR 0007, spec docs/specs/slice-4-dashboard.md).
 
@@ -55,4 +55,46 @@ test('P-7: insight card ids are one per card kind and SKU', () => {
   for (const id of ['market-context:dark-92', 'ideas:creamy-oat', 'packaging:creamy-hazelnut']) expect(INSIGHT_CARD_IDS.has(id)).toBe(true)
   expect(INSIGHT_CARD_IDS.size).toBe(9)
   for (const bad of ['nope', 'market-context:nope', 'ideas:']) expect(INSIGHT_CARD_IDS.has(bad)).toBe(false)
+})
+
+// UX pass (ADR 0011).
+const summary = (o: Record<string, unknown>) => normalizeSummary(o)
+
+test('UX-1: four headline numbers, each with a data label and an evidence tag', () => {
+  const s = summary({
+    scans: { total: { live: 2, synthetic: 98 } },
+    pageViews: { byPage: [{ key: 'product', live: 1, synthetic: 40 }, { key: 'feedback', live: 0, synthetic: 9 }] },
+    feedback: { total: { live: 0, synthetic: 12 } },
+    web: { total: { sessions: 10, pageViews: 20, videoPlays: 3, shopClicks: 7 }, byDay: [] },
+  })
+  expect(headlineNumbers(s).map((h) => [h.id, h.value, h.kind, h.evidence])).toEqual([
+    ['scans', 100, 'mixed', 'observed'],
+    ['visits', 50, 'mixed', 'observed'],
+    ['shop', 7, 'synthetic', 'attributed'],
+    ['feedback', 12, 'synthetic', 'observed'],
+  ])
+})
+
+test('UX-2: a new live scan is described from live counts only', () => {
+  const prev = summary({
+    scans: { total: { live: 1, synthetic: 50 }, byMarket: [{ key: 'AT', live: 1, synthetic: 30 }], byCampaign: [{ key: 'wrapper-2026', live: 1, synthetic: 50 }], bySku: [{ key: 'dark-92', live: 1, synthetic: 50 }] },
+  })
+  const next = summary({
+    scans: {
+      total: { live: 2, synthetic: 60 },
+      byMarket: [{ key: 'DE', live: 0, synthetic: 10 }, { key: 'AT', live: 2, synthetic: 30 }],
+      byCampaign: [{ key: 'wrapper-2026', live: 2, synthetic: 60 }],
+      bySku: [{ key: 'dark-92', live: 2, synthetic: 60 }],
+    },
+  })
+  expect(newLiveScan(prev, next)).toEqual({ count: 1, market: 'AT', campaign: 'wrapper-2026', sku: 'dark-92' })
+  // Synthetic growth alone is never a live scan.
+  expect(newLiveScan(prev, summary({ scans: { total: { live: 1, synthetic: 99 } } }))).toBeNull()
+  expect(newLiveScan(next, prev)).toBeNull()
+})
+
+test('UX-3: a breakdown is hidden only when its filter leaves one value', () => {
+  expect(breakdownsToShow({ market: null, campaign: null })).toEqual({ market: true, campaign: true })
+  expect(breakdownsToShow({ market: 'AT', campaign: null })).toEqual({ market: false, campaign: true })
+  expect(breakdownsToShow({ market: 'AT', campaign: 'shelf-q4-2026' })).toEqual({ market: false, campaign: false })
 })

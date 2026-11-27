@@ -77,7 +77,7 @@ test('E-AG-5: every data answer has a source with rows and a date', async ({ req
   for (const q of ['top-packaging-at', 'feedback-visits-by-campaign', 'top-theme-dark-92']) {
     const a = await ask(request, q)
     expect(a.sources.length, q).toBeGreaterThan(0)
-    expect(a.sources[0].detail, q).toMatch(/[1-9][\d,]* rows/)
+    expect(a.sources[0].detail, q).toMatch(/[1-9][\d,]* (scans|visits|answers) \(/)
     expect(a.sources[0].date, q).toMatch(/\d{1,2} \w{3} \d{4}, \d{2}:\d{2}/)
   }
 })

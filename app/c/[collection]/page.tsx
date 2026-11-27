@@ -33,7 +33,6 @@ export default async function CollectionPage({ params, searchParams }: Props) {
       <section className="cocoa-grain text-cream">
         <header className="mx-auto flex max-w-3xl flex-col items-start gap-3 px-5 pb-14 pt-10 md:pb-20 md:pt-16">
           <LogoSlot />
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-caramel">fairafric</p>
           <h1 className="font-display text-4xl font-extrabold leading-[1.05] tracking-tight md:text-6xl">{collection.name}</h1>
           <p className="text-cream/75">{skus.length} bars. Pick one to see more and share your feedback.</p>
         </header>

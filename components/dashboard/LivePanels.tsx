@@ -2,15 +2,19 @@
 
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
-import { BarChart3, Eye, Globe, MessageSquare } from 'lucide-react'
+import { Activity, BarChart3, Eye, Globe, MessageSquare } from 'lucide-react'
 import { DataBadge } from '@/components/DataBadge'
 import { EmptyState } from '@/components/EmptyState'
+import { EvidenceLegend } from '@/components/EvidenceLegend'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { PANEL_EVIDENCE, type LivePanelId } from '@/lib/evidence'
 import {
   badgeKind,
+  breakdownsToShow,
   campaignName,
+  headlineNumbers,
   marketName,
+  newLiveScan,
   skuName,
   sumSplits,
   type DashboardSummary,
@@ -42,10 +46,33 @@ interface Flash {
   feedback: number
 }
 
+/** One line in the Live activity strip: a live scan or answer that arrived while the page was open (ADR 0011). */
+interface LiveEvent {
+  id: number
+  at: string
+  text: string
+}
+const MAX_EVENTS = 4
+
+function scanText(s: NonNullable<ReturnType<typeof newLiveScan>>): string {
+  const parts = [s.sku ? skuName(s.sku) : null, s.market ? marketName(s.market) : null, s.campaign ? campaignName(s.campaign) : null].filter(Boolean)
+  const head = s.count > 1 ? `${s.count} live scans` : 'Live scan'
+  return parts.length ? `${head} · ${parts.join(' · ')}` : head
+}
+
+function answerText(n: number, r: DashboardSummary['feedback']['recent'][number] | undefined): string {
+  const head = n > 1 ? `${n} live feedback answers` : 'Live feedback answer'
+  if (!r) return head
+  const parts = [skuName(r.sku), r.market ? marketName(r.market) : null, `${r.rating} of 5 stars`].filter(Boolean)
+  return `${head} · ${parts.join(' · ')}`
+}
+
 export function LivePanels({ query, view, initial, collectionId }: Props) {
   const [data, setData] = useState<DashboardSummary | null>(initial)
   const [ok, setOk] = useState(initial !== null)
   const [flash, setFlash] = useState<Flash>({ scans: 0, feedback: 0 })
+  const [events, setEvents] = useState<LiveEvent[]>([])
+  const eventId = useRef(0)
   const inFlight = useRef(false)
   const last = useRef<DashboardSummary | null>(initial)
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -71,6 +98,13 @@ export function LivePanels({ query, view, initial, collectionId }: Props) {
           const prev = last.current
           const scans = prev ? next.scans.total.live - prev.scans.total.live : 0
           const feedback = prev ? next.feedback.total.live - prev.feedback.total.live : 0
+          if (prev) {
+            const added: LiveEvent[] = []
+            const scan = newLiveScan(prev, next)
+            if (scan) added.push({ id: ++eventId.current, at: next.asOf, text: scanText(scan) })
+            if (feedback > 0) added.push({ id: ++eventId.current, at: next.asOf, text: answerText(feedback, next.feedback.recent[0]) })
+            if (added.length) setEvents((e) => [...added, ...e].slice(0, MAX_EVENTS))
+          }
           if (scans > 0 || feedback > 0) {
             setFlash({ scans: Math.max(0, scans), feedback: Math.max(0, feedback) })
             if (flashTimer.current) clearTimeout(flashTimer.current)
@@ -96,6 +130,9 @@ export function LivePanels({ query, view, initial, collectionId }: Props) {
     }
   }, [query, initial, router])
 
+  const q = new URLSearchParams(query)
+  const show = breakdownsToShow({ market: q.get('market') || null, campaign: q.get('campaign') || null })
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -105,7 +142,8 @@ export function LivePanels({ query, view, initial, collectionId }: Props) {
           {flash.scans > 0 && <span className="font-semibold text-green-deep"> · New live scan</span>}
           {flash.feedback > 0 && <span className="font-semibold text-green-deep"> · New live answer</span>}
         </p>
-        {/* Chart legend: identity is colour plus texture, never colour alone. */}
+        {/* One legend row: chart key (colour plus texture, never colour alone) and the evidence-tag explainer. */}
+        <div className="flex flex-wrap items-center gap-4">
         <p className="flex items-center gap-4 text-xs text-ink-secondary" aria-label="Chart legend">
           <span className="flex items-center gap-1.5">
             <span aria-hidden className="h-3 w-3 rounded-sm bg-series-live" />
@@ -116,11 +154,15 @@ export function LivePanels({ query, view, initial, collectionId }: Props) {
             Synthetic
           </span>
         </p>
+        <EvidenceLegend />
+        </div>
       </div>
+      <LiveActivity events={events} />
+      {data && <Headline data={data} flash={flash} />}
       {/* Two independent columns, so a short panel never leaves a gap beside a tall one. */}
       <div className="grid items-start gap-4 md:grid-cols-2">
         <div className="flex flex-col gap-4">
-          <ScansPanel data={data} view={view} flash={flash.scans} collectionId={collectionId} />
+          <ScansPanel data={data} view={view} flash={flash.scans} collectionId={collectionId} show={show} />
           <WebPanel data={data} />
         </div>
         <div className="flex flex-col gap-4">
@@ -129,6 +171,54 @@ export function LivePanels({ query, view, initial, collectionId }: Props) {
         </div>
       </div>
     </div>
+  )
+}
+
+/** Live scans and answers that arrived while the page was open: the moment the demo is built around (ADR 0011). */
+function LiveActivity({ events }: { events: LiveEvent[] }) {
+  return (
+    <section data-testid="live-activity" aria-label="Live activity" className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl bg-night px-4 py-3 text-sm text-ivory">
+      <span className="flex items-center gap-2 font-semibold text-gold">
+        <Activity aria-hidden className="h-4 w-4" />
+        Live activity
+      </span>
+      {events.length === 0 ? (
+        <span className="text-mist">Waiting for a live scan. Scan a code and it shows here within 10 seconds.</span>
+      ) : (
+        <ul aria-live="polite" className="flex flex-col gap-1">
+          {events.map((e, i) => (
+            <li key={e.id} data-testid="live-event" className={`flex items-center gap-2 ${i === 0 ? 'live-tag font-semibold' : 'text-mist'}`}>
+              <span aria-hidden className={`h-2 w-2 shrink-0 rounded-full ${i === 0 ? 'bg-series-live' : 'bg-mist/50'}`} />
+              <span className="tabular-nums">{timeOf(e.at)}</span>
+              <span>{e.text}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
+const KIND_TEXT = { live: 'Live', synthetic: 'Synthetic data', mixed: 'Live + synthetic data' } as const
+
+/** Four headline numbers for the selection, each with its evidence tag and data label (ADR 0011). */
+function Headline({ data, flash }: { data: DashboardSummary; flash: Flash }) {
+  return (
+    <section data-testid="headline" aria-label="Headline numbers" className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      {headlineNumbers(data).map((h) => {
+        const lit = (h.id === 'scans' && flash.scans > 0) || (h.id === 'feedback' && flash.feedback > 0)
+        return (
+          <div key={h.id} data-testid="headline-tile" data-kind={h.kind} className="flex flex-col gap-1 rounded-2xl bg-surface p-4 ring-1 ring-line">
+            <span className="text-sm font-medium text-ink-secondary">{h.label}</span>
+            <span className={`font-display text-3xl font-extrabold tracking-tight tabular-nums md:text-4xl ${lit ? 'live-flash' : ''}`}>{fmt(h.value)}</span>
+            <span className="mt-1 flex flex-wrap items-center gap-1.5">
+              <EvidenceTag kind={h.evidence} />
+              <span className={`text-xs font-semibold ${h.kind === 'live' ? 'text-green-deep' : 'text-synthetic'}`}>{KIND_TEXT[h.kind]}</span>
+            </span>
+          </div>
+        )
+      })}
+    </section>
   )
 }
 
@@ -226,7 +316,7 @@ function LiveTag({ n }: { n: number }) {
   return <span className="live-tag rounded-full bg-series-live px-2 py-0.5 text-xs font-semibold text-white">+{fmt(n)} live</span>
 }
 
-function ScansPanel({ data, view, flash, collectionId }: { data: DashboardSummary | null; view: View; flash: number; collectionId?: string }) {
+function ScansPanel({ data, view, flash, collectionId, show }: { data: DashboardSummary | null; view: View; flash: number; collectionId?: string; show: { market: boolean; campaign: boolean } }) {
   const s = data?.scans
   const total = s ? s.total.live + s.total.synthetic : 0
   // Every bar of the collection gets a row, with 0 when the selection has no scans for it.
@@ -249,14 +339,22 @@ function ScansPanel({ data, view, flash, collectionId }: { data: DashboardSummar
             </span>
           </p>
           <Spark days={s.byDay.map((d) => ({ live: d.live, synthetic: d.synthetic, label: d.key }))} title="Scans per day, last 60 days" />
-          <h3 className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink-tertiary">By campaign</h3>
-          <Bars rows={s.byCampaign} label={campaignName} />
-          <h3 className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink-tertiary">By market</h3>
-          <Bars rows={s.byMarket} label={marketName} />
+          {show.campaign && (
+            <>
+              <h3 className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink-tertiary">By campaign</h3>
+              <Bars rows={s.byCampaign} label={campaignName} />
+            </>
+          )}
+          {show.market && (
+            <>
+              <h3 className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink-tertiary">By market</h3>
+              <Bars rows={s.byMarket} label={marketName} />
+            </>
+          )}
           {view === 'collection' && (
             <>
               <h3 className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink-tertiary">By bar</h3>
-              <Bars rows={[...bySku, { key: 'collection code', ...s.collectionCode }]} label={(k) => (k === 'collection code' ? 'Collection code' : skuName(k))} />
+              <Bars rows={[...bySku, { key: 'collection code', ...s.collectionCode }]} label={(k) => (k === 'collection code' ? 'Collection code, no bar chosen' : skuName(k))} />
             </>
           )}
         </>

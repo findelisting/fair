@@ -78,6 +78,31 @@ test.describe('signed in', () => {
     expect(scan.status()).toBe(302)
     await expect(live).toHaveText(String(before + 1), { timeout: 10_000 })
     expect(Date.now() - started).toBeLessThan(10_000)
+    // ADR 0011: the live moment is named in the Live activity strip.
+    await expect(page.getByTestId('live-event').first()).toContainText('Live scan · Dark 92% · Austria')
+  })
+
+  test('UX-7: four headline tiles, each labelled; filtered breakdowns hide; agent states its scope', async ({ page }) => {
+    await page.goto('/dashboard?view=product&id=dark-92&market=AT&ask=top-packaging-at')
+    const tiles = page.getByTestId('headline-tile')
+    await expect(tiles).toHaveCount(4)
+    for (let i = 0; i < 4; i++) {
+      await expect(tiles.nth(i).getByTestId('evidence-tag')).toHaveCount(1)
+      await expect(tiles.nth(i)).toContainText(/Live|Synthetic data/)
+    }
+    await expect(page.getByTestId('live-activity')).toBeVisible()
+    await expect(page.getByTestId('panel-scans')).not.toContainText('By market')
+    await expect(page.getByTestId('panel-scans')).toContainText('By campaign')
+    await expect(page.getByTestId('agent-scope')).toContainText('Covers: Austria')
+    await expect(page.getByTestId('agent-scope')).toContainText('filters do not apply')
+  })
+
+  test('UX-8: the collection view lists only questions that span products', async ({ page }) => {
+    await page.goto('/dashboard?view=collection&id=vegan-creamy')
+    const panel = page.getByTestId('agent-panel')
+    await expect(panel.getByRole('link')).toHaveCount(2)
+    await expect(panel).not.toContainText('92% bar')
+    await expect(page.getByTestId('panel-scans')).toContainText('Collection code, no bar chosen')
   })
 
   test('P-2: filters stay in the URL', async ({ page }) => {

@@ -1,6 +1,7 @@
 // Dashboard logic without server or database (slice 4, ADR 0007). Unit-tested.
 import { collectionById, isCampaign, isMarket, seedPayload, skuById } from './catalog'
 import type { DataKind } from '@/components/DataBadge'
+import type { EvidenceKind } from './evidence'
 
 export type View = 'product' | 'collection'
 export interface DashboardParams {
@@ -149,3 +150,57 @@ export const INSIGHT_CARD_IDS: ReadonlySet<string> = new Set(
 export const campaignName = (id: string) => seedPayload.campaigns.find((c) => c.id === id)?.name ?? id
 export const marketName = (code: string) => seedPayload.markets.find((m) => m.code === code)?.name ?? code
 export const skuName = (id: string) => skuById(id)?.name ?? id
+
+// UX pass (ADR 0011): headline numbers, the live-scan moment, and which breakdowns to show.
+
+export interface HeadlineNumber {
+  id: 'scans' | 'visits' | 'shop' | 'feedback'
+  label: string
+  value: number
+  kind: DataKind
+  evidence: EvidenceKind
+}
+
+/** Four headline tiles for the selected product or collection. Each carries its data label and evidence tag. */
+export function headlineNumbers(s: DashboardSummary): HeadlineNumber[] {
+  const visits = sumSplits(s.pageViews.byPage)
+  return [
+    { id: 'scans', label: 'QR scans', value: s.scans.total.live + s.scans.total.synthetic, kind: badgeKind(s.scans.total), evidence: 'observed' },
+    { id: 'visits', label: 'Page visits', value: visits.live + visits.synthetic, kind: badgeKind(visits), evidence: 'observed' },
+    { id: 'shop', label: 'Shop clicks', value: s.web.total.shopClicks, kind: 'synthetic', evidence: 'attributed' },
+    { id: 'feedback', label: 'Feedback answers', value: s.feedback.total.live + s.feedback.total.synthetic, kind: badgeKind(s.feedback.total), evidence: 'observed' },
+  ]
+}
+
+export interface NewLiveScan {
+  count: number
+  market: string | null
+  campaign: string | null
+  sku: string | null
+}
+
+/** The first key whose live count went up between two polls. */
+function grew(prev: KeyedSplit[], next: KeyedSplit[]): string | null {
+  for (const r of next) {
+    const before = prev.find((p) => p.key === r.key)?.live ?? 0
+    if (r.live > before) return r.key
+  }
+  return null
+}
+
+/** What arrived live since the previous poll, from live counts only (never synthetic). Null when nothing new. */
+export function newLiveScan(prev: DashboardSummary, next: DashboardSummary): NewLiveScan | null {
+  const count = next.scans.total.live - prev.scans.total.live
+  if (count <= 0) return null
+  return {
+    count,
+    market: grew(prev.scans.byMarket, next.scans.byMarket),
+    campaign: grew(prev.scans.byCampaign, next.scans.byCampaign),
+    sku: grew(prev.scans.bySku, next.scans.bySku),
+  }
+}
+
+/** A breakdown is hidden when its filter already leaves one value (it would repeat the total). */
+export function breakdownsToShow(filters: { market: string | null; campaign: string | null }): { market: boolean; campaign: boolean } {
+  return { market: !filters.market, campaign: !filters.campaign }
+}

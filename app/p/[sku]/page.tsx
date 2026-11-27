@@ -1,11 +1,13 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { ArrowUpRight, MessageSquareHeart, ShieldCheck } from 'lucide-react'
+import { MessageSquareHeart, ShieldCheck } from 'lucide-react'
+import { BrandLink } from '@/components/BrandLink'
 import { DemoButton } from '@/components/DemoButton'
 import { LogoSlot } from '@/components/LogoSlot'
 import { ProductImage, toneFor } from '@/components/ProductImage'
 import { brandLinksFor } from '@/lib/brandLinks'
 import { skuById } from '@/lib/catalog'
+import { storyFor } from '@/lib/productStory'
 import { cleanParams, linkQuery } from '@/lib/params'
 import { trackPageView } from '@/lib/recordPageView'
 
@@ -33,6 +35,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
   await trackPageView({ page: 'product', sku_id: sku.id, campaign_id: p.campaign, market: p.market })
 
   const links = brandLinksFor(sku.id)
+  const story = storyFor(sku.id)
   const feedbackHref = `/f/${sku.id}?${linkQuery({ sku: sku.id }, p)}`
   return (
     <main id="main" className="min-h-[calc(100dvh-36px)] [--focus-ring:var(--color-caramel)] bg-cream text-cocoa">
@@ -41,7 +44,6 @@ export default async function ProductPage({ params, searchParams }: Props) {
           <ProductImage label={sku.name} tone={toneFor(sku.id)} className="rise-in h-auto w-full max-w-md justify-self-center" />
           <header className="flex flex-col items-start gap-3">
             <LogoSlot />
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-caramel">fairafric</p>
             <h1 className="font-display text-4xl font-extrabold leading-[1.05] tracking-tight md:text-6xl">{sku.name}</h1>
             <p className="flex flex-wrap gap-2 text-sm">
               <span className="rounded-full bg-cocoa-raised px-3 py-1 ring-1 ring-inset ring-cocoa-line">{sku.variety}</span>
@@ -57,9 +59,24 @@ export default async function ProductPage({ params, searchParams }: Props) {
             About this bar
             <span className="rounded-full bg-cream-deep px-2 py-0.5 font-body text-xs font-semibold text-ink-secondary">Demo content</span>
           </h2>
-          <p className="text-ink-secondary">
-            In the pilot, fairafric&apos;s own story for this bar goes here: where it is made, how it tastes, and who made it.
-          </p>
+          {story ? (
+            <>
+              <p data-testid="product-story" className="text-lg leading-relaxed text-ink">
+                {story.story}
+              </p>
+              <h3 className="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-ink-tertiary">How it tastes</h3>
+              <ul className="flex flex-wrap gap-2" aria-label="Tasting notes">
+                {story.tasting.map((t) => (
+                  <li key={t} className="rounded-full bg-surface px-3 py-1 text-sm font-medium ring-1 ring-inset ring-cream-deep">
+                    {t}
+                  </li>
+                ))}
+              </ul>
+              <p className="text-xs text-ink-tertiary">Demo text. In a pilot, fairafric writes this story.</p>
+            </>
+          ) : (
+            <p className="text-ink-secondary">In a pilot, fairafric&apos;s own story for this bar goes here.</p>
+          )}
           <p className="mt-2 flex items-start gap-2 text-sm text-ink-secondary">
             <ShieldCheck aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-caramel-deep" />
             This page sets no tracking cookies. Feedback is anonymous.
@@ -88,25 +105,5 @@ export default async function ProductPage({ params, searchParams }: Props) {
         </div>
       </div>
     </main>
-  )
-}
-
-// Outbound link to the brand's own site: no referrer, no opener, nothing embedded (ADR 0003, amendment 1).
-function BrandLink({ href, label, note, highlight = false }: { href: string; label: string; note: string; highlight?: boolean }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        referrerPolicy="no-referrer"
-        data-testid="brand-link"
-        className={`flex min-h-12 items-center justify-center gap-1.5 rounded-full px-5 py-3 text-base font-semibold ring-1 ring-inset transition-colors ${highlight ? 'bg-caramel text-cocoa ring-caramel' : 'bg-surface text-cocoa ring-cream-deep hover:ring-caramel'}`}
-      >
-        {label}
-        <ArrowUpRight aria-hidden className="h-4 w-4" />
-      </a>
-      <p className="px-2 text-xs text-ink-tertiary">{note}</p>
-    </div>
   )
 }

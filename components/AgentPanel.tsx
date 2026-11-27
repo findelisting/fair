@@ -14,10 +14,15 @@ interface Props {
   /** The `ask` search parameter. Anything that is not a question ID shows no answer. */
   ask?: string | string[]
   hrefFor: (id: QuestionId) => string
+  /** Questions to list; the collection view passes only those that span products (ADR 0011). Default: all. */
+  questionIds?: readonly QuestionId[]
+  /** True when the dashboard has a market or campaign filter, which the fixed questions do not use. */
+  filtersActive?: boolean
 }
 
-export async function AgentPanel({ ask, hrefFor }: Props) {
-  const id = typeof ask === 'string' && isQuestionId(ask) ? ask : null
+export async function AgentPanel({ ask, hrefFor, questionIds, filtersActive = false }: Props) {
+  const listed = QUESTIONS.filter((q) => !questionIds || questionIds.includes(q.id))
+  const id = typeof ask === 'string' && isQuestionId(ask) && listed.some((q) => q.id === ask) ? ask : null
   let answer: AgentAnswer | null = null
   let failed = false
   if (id) {
@@ -42,7 +47,7 @@ export async function AgentPanel({ ask, hrefFor }: Props) {
         </p>
       </header>
       <ul className="grid gap-2 md:grid-cols-2">
-        {QUESTIONS.map((q) => (
+        {listed.map((q) => (
           <li key={q.id}>
             <a
               href={hrefFor(q.id)}
@@ -57,6 +62,9 @@ export async function AgentPanel({ ask, hrefFor }: Props) {
           </li>
         ))}
       </ul>
+      {questionIds && listed.length < QUESTIONS.length && (
+        <p className="text-xs text-mist">Questions about a single bar are in the product view.</p>
+      )}
 
       {id && (
         <div data-testid="agent-answer" className="rise-in flex flex-col gap-2 rounded-xl bg-surface p-5 text-ink">
@@ -64,6 +72,10 @@ export async function AgentPanel({ ask, hrefFor }: Props) {
             <h3 className="text-sm font-semibold text-ink-secondary">{QUESTIONS.find((q) => q.id === id)!.question}</h3>
             {!failed && <EvidenceTag kind={QUESTION_EVIDENCE[id]} className="shrink-0" />}
           </div>
+          <p data-testid="agent-scope" className="text-xs text-ink-secondary">
+            Covers: {QUESTIONS.find((q) => q.id === id)!.scope}
+            {filtersActive && <span className="font-semibold"> · The dashboard filters do not apply to this answer.</span>}
+          </p>
           <p data-testid="agent-answer-text" className="font-display text-lg font-semibold leading-snug">
             {failed ? 'The answer is not available right now. Please try again in a moment.' : answer?.answer}
           </p>
