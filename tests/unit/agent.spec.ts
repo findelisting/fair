@@ -6,6 +6,7 @@ import {
   buildPriceAnswer,
   formatBerlin,
   formatCount,
+  agentStatusLine,
   isQuestionId,
   type AgentRow,
 } from '../../lib/agent'
@@ -145,4 +146,12 @@ test('U-AG-12: numbers use English grouping', () => {
 test('UX-4: every question states its scope, and only spanning questions show in the collection view', () => {
   for (const q of QUESTIONS) expect(q.scope.trim(), q.id).not.toBe('')
   expect(COLLECTION_QUESTIONS).toEqual(['top-packaging-at', 'feedback-visits-by-campaign'])
+})
+
+test("RD-5: the status line before a streamed answer uses only the answer's own counts", () => {
+  expect(agentStatusLine({ id: 'top-packaging-at', sources: [], counts: { live: 2, synthetic: 1194 } })).toBe('Looking at 1,196 scans…')
+  expect(agentStatusLine({ id: 'top-theme-dark-92', sources: [], counts: { live: 0, synthetic: 134 } })).toBe('Looking at 134 answers…')
+  expect(agentStatusLine({ id: 'feedback-visits-by-campaign', sources: [] })).toBe('Looking at the visits…')
+  const listing = { name: 'Shop', date: '1 Nov 2026', url: 'https://example.com' }
+  expect(agentStatusLine({ id: 'comparable-dark-bars', sources: [listing, listing] })).toBe('Looking at 2 public listings…')
 })

@@ -1,5 +1,20 @@
 import { expect, test } from '@playwright/test'
-import { badgeKind, breakdownsToShow, checkApiParams, headlineNumbers, INSIGHT_CARD_IDS, newLiveScan, normalizeSummary, parseDashboardParams, trimComment } from '@/lib/dashboard'
+import {
+  agoText,
+  badgeKind,
+  breakdownsToShow,
+  checkApiParams,
+  filterChips,
+  headlineNumbers,
+  INSIGHT_CARD_IDS,
+  journeySteps,
+  newLiveScan,
+  normalizeSummary,
+  optionsWithScans,
+  parseDashboardParams,
+  starFills,
+  trimComment,
+} from '@/lib/dashboard'
 
 // Slice 4 dashboard logic (ADR 0007, spec docs/specs/slice-4-dashboard.md).
 
@@ -53,7 +68,10 @@ test('D-5: comments are cut to 140 characters', () => {
 
 test('P-7: insight card ids are one per card kind and SKU', () => {
   for (const id of ['market-context:dark-92', 'ideas:creamy-oat', 'packaging:creamy-hazelnut']) expect(INSIGHT_CARD_IDS.has(id)).toBe(true)
-  expect(INSIGHT_CARD_IDS.size).toBe(9)
+  // ADR 0012: one Ideas-section check per SKU and one per agent question.
+  for (const id of ['insights:dark-92', 'agent:top-packaging-at']) expect(INSIGHT_CARD_IDS.has(id)).toBe(true)
+  expect(INSIGHT_CARD_IDS.size).toBe(16)
+  for (const id of INSIGHT_CARD_IDS) expect(id).toMatch(/^[a-z-]{2,20}:[a-z0-9-]{2,40}$/)
   for (const bad of ['nope', 'market-context:nope', 'ideas:']) expect(INSIGHT_CARD_IDS.has(bad)).toBe(false)
 })
 
@@ -97,4 +115,58 @@ test('UX-3: a breakdown is hidden only when its filter leaves one value', () => 
   expect(breakdownsToShow({ market: null, campaign: null })).toEqual({ market: true, campaign: true })
   expect(breakdownsToShow({ market: 'AT', campaign: null })).toEqual({ market: false, campaign: true })
   expect(breakdownsToShow({ market: 'AT', campaign: 'shelf-q4-2026' })).toEqual({ market: false, campaign: false })
+})
+
+// Dashboard redesign (ADR 0012).
+
+test('RD-1: filter chips name the active market and campaign only', () => {
+  expect(filterChips({ market: null, campaign: null })).toEqual([])
+  expect(filterChips({ market: 'AT', campaign: 'wrapper-2026' }).map((c) => [c.param, c.label])).toEqual([
+    ['market', 'Austria'],
+    ['campaign', 'On-pack wrapper code'],
+  ])
+})
+
+test('RD-2: options with scans come from scan counts, zero rows excluded', () => {
+  const s = summary({
+    scans: {
+      byMarket: [{ key: 'AT', live: 0, synthetic: 4 }, { key: 'FR', live: 0, synthetic: 0 }],
+      byCampaign: [{ key: 'wrapper-2026', live: 1, synthetic: 0 }],
+    },
+  })
+  const o = optionsWithScans(s)
+  expect([...o.markets]).toEqual(['AT'])
+  expect([...o.campaigns]).toEqual(['wrapper-2026'])
+})
+
+test('RD-3: journey steps are proportional, labelled, and carry no rates', () => {
+  const s = summary({
+    scans: { total: { live: 2, synthetic: 198 } },
+    pageViews: { byPage: [{ key: 'product', live: 0, synthetic: 100 }, { key: 'feedback', live: 0, synthetic: 30 }] },
+    feedback: { total: { live: 0, synthetic: 20 } },
+    web: { total: { sessions: 0, pageViews: 0, videoPlays: 0, shopClicks: 50 }, byDay: [] },
+  })
+  const steps = journeySteps(s)
+  expect(steps.map((x) => [x.id, x.value, x.share, x.kind, x.evidence])).toEqual([
+    ['scan', 200, 1, 'mixed', 'observed'],
+    ['product', 100, 0.5, 'synthetic', 'observed'],
+    ['feedback', 20, 0.1, 'synthetic', 'observed'],
+    ['shop', 50, 0.25, 'synthetic', 'attributed'],
+  ])
+  for (const x of steps) expect(Object.keys(x)).not.toContain('rate')
+  // An empty selection never divides by zero.
+  expect(journeySteps(summary({})).every((x) => x.share === 0)).toBe(true)
+})
+
+test('RD-4: ago text and star fills', () => {
+  const now = Date.parse('2026-11-27T12:00:00Z')
+  expect(agoText('2026-11-27T11:59:48Z', now)).toBe('12 s ago')
+  expect(agoText('2026-11-27T11:56:00Z', now)).toBe('4 min ago')
+  expect(agoText('2026-11-27T09:00:00Z', now)).toBe('3 h ago')
+  expect(agoText('2026-11-24T12:00:00Z', now)).toBe('3 days ago')
+  expect(agoText('2026-11-27T12:00:05Z', now)).toBe('0 s ago')
+  expect(starFills(4.3)).toEqual([1, 1, 1, 1, 0.3])
+  expect(starFills(0)).toEqual([0, 0, 0, 0, 0])
+  expect(starFills(7)).toEqual([1, 1, 1, 1, 1])
+  expect(starFills(2.06)).toEqual([1, 1, 0.1, 0, 0])
 })

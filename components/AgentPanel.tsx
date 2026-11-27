@@ -1,6 +1,10 @@
+import Link from 'next/link'
 import { Package } from 'lucide-react'
-import { QUESTIONS, isQuestionId, type AgentAnswer, type QuestionId } from '@/lib/agent'
+import { QUESTIONS, agentStatusLine, isQuestionId, type AgentAnswer, type QuestionId } from '@/lib/agent'
 import { getAnswer } from '@/lib/agentData'
+import { agentCardId } from '@/lib/dashboard'
+import { AnswerStream } from './dashboard/AnswerStream'
+import { InsightCheck } from './dashboard/InsightCheck'
 import { cn } from '@/lib/utils'
 import { QUESTION_EVIDENCE } from '@/lib/evidence'
 import { EvidenceTag } from './EvidenceTag'
@@ -35,9 +39,9 @@ export async function AgentPanel({ ask, hrefFor, questionIds, filtersActive = fa
   }
 
   return (
-    <section data-testid="agent-panel" className="flex flex-col gap-4 rounded-2xl bg-night p-5 text-ivory [--focus-ring:var(--color-gold)] md:p-6">
+    <section data-testid="agent-panel" aria-labelledby="agent-title" className="flex flex-col gap-4 rounded-2xl bg-night p-5 text-ivory [--focus-ring:var(--color-gold)] md:p-6">
       <header className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="flex items-center gap-2 font-display text-xl font-bold">
+        <h2 id="agent-title" className="flex items-center gap-2 font-display text-xl font-bold">
           <Package aria-hidden className="h-5 w-5 text-gold" />
           Product agent
         </h2>
@@ -46,19 +50,22 @@ export async function AgentPanel({ ask, hrefFor, questionIds, filtersActive = fa
           counted from that data, with sources. No external AI; it makes no claims and changes nothing.
         </p>
       </header>
-      <ul className="grid gap-2 md:grid-cols-2">
+      <ul className="flex flex-wrap gap-2" aria-label="Suggested questions">
         {listed.map((q) => (
           <li key={q.id}>
-            <a
+            {/* Client navigation without scrolling: the page keeps its place and the numbers do not restart. */}
+            <Link
               href={hrefFor(q.id)}
+              scroll={false}
+              prefetch={false}
               aria-current={q.id === id ? 'true' : undefined}
               className={cn(
-                'flex h-full min-h-12 items-center rounded-xl px-4 py-2 text-sm font-medium ring-1 ring-inset transition-colors',
+                'flex min-h-11 items-center rounded-full px-4 py-2 text-left text-sm font-medium ring-1 ring-inset transition-colors duration-150',
                 q.id === id ? 'bg-gold text-night ring-gold' : 'bg-night-raised text-ivory ring-white/10 hover:ring-gold/60',
               )}
             >
               {q.question}
-            </a>
+            </Link>
           </li>
         ))}
       </ul>
@@ -70,16 +77,22 @@ export async function AgentPanel({ ask, hrefFor, questionIds, filtersActive = fa
         <div data-testid="agent-answer" className="rise-in flex flex-col gap-2 rounded-xl bg-surface p-5 text-ink">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <h3 className="text-sm font-semibold text-ink-secondary">{QUESTIONS.find((q) => q.id === id)!.question}</h3>
-            {!failed && <EvidenceTag kind={QUESTION_EVIDENCE[id]} className="shrink-0" />}
+            {!failed && <EvidenceTag kind={QUESTION_EVIDENCE[id]} withLabel className="shrink-0" />}
           </div>
           <p data-testid="agent-scope" className="text-xs text-ink-secondary">
             Covers: {QUESTIONS.find((q) => q.id === id)!.scope}
             {filtersActive && <span className="font-semibold"> · The dashboard filters do not apply to this answer.</span>}
           </p>
-          <p data-testid="agent-answer-text" className="font-display text-lg font-semibold leading-snug">
-            {failed ? 'The answer is not available right now. Please try again in a moment.' : answer?.answer}
-          </p>
-          {answer && <SourceList sources={answer.sources} />}
+          {failed || !answer ? (
+            <p data-testid="agent-answer-text" className="font-display text-lg font-semibold leading-snug">
+              The answer is not available right now. Please try again in a moment.
+            </p>
+          ) : (
+            <AnswerStream key={answer.id} text={answer.answer} status={agentStatusLine(answer)}>
+              <SourceList sources={answer.sources} />
+              <InsightCheck cardId={agentCardId(answer.id)} prompt="Was this helpful?" className="mt-3" />
+            </AnswerStream>
+          )}
         </div>
       )}
     </section>

@@ -1,5 +1,6 @@
 import { Plug } from 'lucide-react'
 import { DataBadge } from './DataBadge'
+import { OpenOnWide } from './dashboard/SourcesDrawer'
 import { DATA_SOURCES, NOT_CONNECTED_LABEL, PILOT_NOTE } from '@/lib/dataSources'
 
 /** What feeds the dashboard today, and what a pilot could connect (ADR 0009). Static: nothing is connected or stored. */
@@ -7,14 +8,14 @@ export function DataSourcesPanel() {
   const connected = DATA_SOURCES.filter((s) => s.status !== 'available')
   const available = DATA_SOURCES.filter((s) => s.status === 'available')
   return (
-    <section id="data-sources" data-testid="data-sources-panel" aria-labelledby="data-sources-title" className="scroll-mt-6 rounded-2xl bg-surface p-5 ring-1 ring-line">
+    <section id="data-sources" data-testid="data-sources-panel" aria-labelledby="data-sources-title" className="rounded-2xl bg-surface p-5 ring-1 ring-line">
       <h2 id="data-sources-title" className="flex items-center gap-2 font-display text-base font-bold">
         <Plug aria-hidden className="h-4 w-4 text-green" />
         Data sources
       </h2>
       <p className="mt-1 text-sm text-ink-secondary">What feeds this dashboard today, and what Finde can connect next.</p>
 
-      <div className="mt-4 grid gap-6 md:grid-cols-2">
+      <div className="mt-4 grid gap-6">
         <div>
           <h3 className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-tertiary">Connected</h3>
           <ul className="mt-2 divide-y divide-line text-sm">
@@ -44,7 +45,7 @@ export function DataSourcesPanel() {
                         {NOT_CONNECTED_LABEL}
                       </span>
                     </span>
-                    <span className="inline-flex min-h-9 shrink-0 items-center rounded-full px-3 text-xs font-semibold text-green-deep ring-1 ring-inset ring-line transition-colors group-open:bg-canvas hover:bg-canvas">
+                    <span className="inline-flex min-h-9 shrink-0 items-center rounded-full bg-green px-3 text-xs font-semibold text-white transition-colors hover:bg-green-deep group-open:bg-green-deep">
                       Request
                     </span>
                   </summary>
@@ -60,5 +61,34 @@ export function DataSourcesPanel() {
 
       <p className="mt-3 text-xs text-ink-tertiary">Demo: only the sources marked Live or Synthetic data feed this dashboard. Nothing else is connected.</p>
     </section>
+  )
+}
+
+/** Row 6 (ADR 0012): the connected sources in one line each, and a way into the full list in the drawer. */
+export function DataSourcesSummary({ children }: { children?: React.ReactNode }) {
+  const connected = DATA_SOURCES.filter((s) => s.status !== 'available')
+  const available = DATA_SOURCES.filter((s) => s.status === 'available')
+  return (
+    <OpenOnWide testId="sources-summary" className="group rounded-2xl bg-surface p-5 ring-1 ring-line">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
+        <h2 className="flex items-center gap-2 font-display text-base font-bold">
+          <Plug aria-hidden className="h-4 w-4 text-green" />
+          Data sources
+        </h2>
+        <span aria-hidden className="text-ink-tertiary transition group-open:rotate-90">›</span>
+      </summary>
+      <ul className="mt-3 flex flex-col gap-2 text-sm sm:flex-row sm:flex-wrap sm:gap-x-6">
+        {connected.map((s) => (
+          <li key={s.id} className="flex items-center gap-2">
+            <span className="font-medium">{s.name}</span>
+            <DataBadge kind={s.status === 'live' ? 'live' : 'synthetic'} />
+          </li>
+        ))}
+      </ul>
+      <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-ink-secondary">
+        {available.length} more available in a pilot. Demo: not connected.
+        {children}
+      </p>
+    </OpenOnWide>
   )
 }

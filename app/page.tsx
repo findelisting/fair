@@ -65,7 +65,7 @@ export default function Home() {
           </Step>
           <Step n={3} icon={<LayoutDashboard aria-hidden className="h-5 w-5" />} title="See it on the dashboard">
             <p>
-              The scan and the answer appear within 10 seconds. Switch between product and collection view, and filter by market
+              The scan and the answer appear within 10 seconds. Switch between One bar and All bars, and filter by market
               or campaign.
             </p>
           </Step>

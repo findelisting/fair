@@ -1,472 +1,508 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
-import { Activity, BarChart3, Eye, Globe, MessageSquare } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { BarChart3, ChevronDown, Eye, Globe, MessageSquare, Route } from 'lucide-react'
 import { DataBadge } from '@/components/DataBadge'
 import { EmptyState } from '@/components/EmptyState'
-import { EvidenceLegend } from '@/components/EvidenceLegend'
 import { EvidenceTag } from '@/components/EvidenceTag'
-import { PANEL_EVIDENCE, type LivePanelId } from '@/lib/evidence'
+import { PANEL_EVIDENCE, type EvidenceKind, type LivePanelId } from '@/lib/evidence'
 import {
+  agoText,
   badgeKind,
   breakdownsToShow,
   campaignName,
   headlineNumbers,
+  journeySteps,
   marketName,
-  newLiveScan,
   skuName,
+  starFills,
   sumSplits,
   type DashboardSummary,
-  type KeyedSplit,
-  type View,
 } from '@/lib/dashboard'
 import { skusInCollection } from '@/lib/catalog'
 import { THEME_EXAMPLES } from '@/lib/synthetic'
 import { TASTE_NOTES, type Theme } from '@/lib/themes'
+import { DataTable, DayColumns, HBars, dayLabel } from './Charts'
+import { useLive } from './DashboardLive'
+import { useAnimatedNumber, useMounted, useReducedMotion } from './motion'
 
-// Number panels, refreshed every 5 s (ADR 0007, decisions 3 and 4).
-// A failed poll keeps the last numbers and shows "Reconnecting"; a 401 sends the browser to sign in.
-const POLL_MS = 5000
-const TIMEOUT_MS = 4000
-/** How long a number that just went up stays highlighted. */
-const FLASH_MS = 4000
+// Number cards for the dashboard rows (ADR 0012). Each reads the shared live state, so the 5-second
+// refresh updates them in place: values that did not change do not move.
 
-interface Props {
-  query: string
-  view: View
-  initial: DashboardSummary | null
-  /** In the collection view: the collection, so every bar gets a row even with no scans. */
-  collectionId?: string
-}
-
-/** New live scans and answers since the previous poll, shown as "+N live" on the number. */
-interface Flash {
-  scans: number
-  feedback: number
-}
-
-/** One line in the Live activity strip: a live scan or answer that arrived while the page was open (ADR 0011). */
-interface LiveEvent {
-  id: number
-  at: string
-  text: string
-}
-const MAX_EVENTS = 4
-
-function scanText(s: NonNullable<ReturnType<typeof newLiveScan>>): string {
-  const parts = [s.sku ? skuName(s.sku) : null, s.market ? marketName(s.market) : null, s.campaign ? campaignName(s.campaign) : null].filter(Boolean)
-  const head = s.count > 1 ? `${s.count} live scans` : 'Live scan'
-  return parts.length ? `${head} · ${parts.join(' · ')}` : head
-}
-
-function answerText(n: number, r: DashboardSummary['feedback']['recent'][number] | undefined): string {
-  const head = n > 1 ? `${n} live feedback answers` : 'Live feedback answer'
-  if (!r) return head
-  const parts = [skuName(r.sku), r.market ? marketName(r.market) : null, `${r.rating} of 5 stars`].filter(Boolean)
-  return `${head} · ${parts.join(' · ')}`
-}
-
-export function LivePanels({ query, view, initial, collectionId }: Props) {
-  const [data, setData] = useState<DashboardSummary | null>(initial)
-  const [ok, setOk] = useState(initial !== null)
-  const [flash, setFlash] = useState<Flash>({ scans: 0, feedback: 0 })
-  const [events, setEvents] = useState<LiveEvent[]>([])
-  const eventId = useRef(0)
-  const inFlight = useRef(false)
-  const last = useRef<DashboardSummary | null>(initial)
-  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const router = useRouter()
-
-  useEffect(() => {
-    let stopped = false
-    const tick = async () => {
-      if (stopped || inFlight.current || document.hidden) return
-      inFlight.current = true
-      const ctrl = new AbortController()
-      const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS)
-      try {
-        const res = await fetch(`/api/dashboard?${query}`, { cache: 'no-store', signal: ctrl.signal })
-        if (res.status === 401) {
-          router.replace(`/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`)
-          return
-        }
-        if (!res.ok) throw new Error(String(res.status))
-        const next = (await res.json()) as DashboardSummary
-        if (!stopped) {
-          // The live moment (design brief): highlight a number when new live rows arrive.
-          const prev = last.current
-          const scans = prev ? next.scans.total.live - prev.scans.total.live : 0
-          const feedback = prev ? next.feedback.total.live - prev.feedback.total.live : 0
-          if (prev) {
-            const added: LiveEvent[] = []
-            const scan = newLiveScan(prev, next)
-            if (scan) added.push({ id: ++eventId.current, at: next.asOf, text: scanText(scan) })
-            if (feedback > 0) added.push({ id: ++eventId.current, at: next.asOf, text: answerText(feedback, next.feedback.recent[0]) })
-            if (added.length) setEvents((e) => [...added, ...e].slice(0, MAX_EVENTS))
-          }
-          if (scans > 0 || feedback > 0) {
-            setFlash({ scans: Math.max(0, scans), feedback: Math.max(0, feedback) })
-            if (flashTimer.current) clearTimeout(flashTimer.current)
-            flashTimer.current = setTimeout(() => setFlash({ scans: 0, feedback: 0 }), FLASH_MS)
-          }
-          last.current = next
-          setData(next)
-          setOk(true)
-        }
-      } catch {
-        if (!stopped) setOk(false)
-      } finally {
-        clearTimeout(timer)
-        inFlight.current = false
-      }
-    }
-    const id = setInterval(tick, POLL_MS)
-    if (!initial) void tick()
-    return () => {
-      stopped = true
-      clearInterval(id)
-      if (flashTimer.current) clearTimeout(flashTimer.current)
-    }
-  }, [query, initial, router])
-
-  const q = new URLSearchParams(query)
-  const show = breakdownsToShow({ market: q.get('market') || null, campaign: q.get('campaign') || null })
-
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p data-testid="poll-status" aria-live="polite" className="flex items-center gap-2 text-xs text-ink-tertiary">
-          <span aria-hidden className={`h-2 w-2 rounded-full ${ok ? 'bg-green' : 'bg-amber-500'}`} />
-          {ok ? `Updated ${data ? timeOf(data.asOf) : ''} · refreshes every 5 seconds` : 'Reconnecting…'}
-          {flash.scans > 0 && <span className="font-semibold text-green-deep"> · New live scan</span>}
-          {flash.feedback > 0 && <span className="font-semibold text-green-deep"> · New live answer</span>}
-        </p>
-        {/* One legend row: chart key (colour plus texture, never colour alone) and the evidence-tag explainer. */}
-        <div className="flex flex-wrap items-center gap-4">
-        <p className="flex items-center gap-4 text-xs text-ink-secondary" aria-label="Chart legend">
-          <span className="flex items-center gap-1.5">
-            <span aria-hidden className="h-3 w-3 rounded-sm bg-series-live" />
-            Live
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span aria-hidden className="mark-synthetic h-3 w-3 rounded-sm" />
-            Synthetic
-          </span>
-        </p>
-        <EvidenceLegend />
-        </div>
-      </div>
-      <LiveActivity events={events} />
-      {data && <Headline data={data} flash={flash} />}
-      {/* Two independent columns, so a short panel never leaves a gap beside a tall one. */}
-      <div className="grid items-start gap-4 md:grid-cols-2">
-        <div className="flex flex-col gap-4">
-          <ScansPanel data={data} view={view} flash={flash.scans} collectionId={collectionId} show={show} />
-          <WebPanel data={data} />
-        </div>
-        <div className="flex flex-col gap-4">
-          <FeedbackPanel data={data} flash={flash.feedback} />
-          <PageViewsPanel data={data} />
-        </div>
-      </div>
-    </div>
-  )
-}
-
-/** Live scans and answers that arrived while the page was open: the moment the demo is built around (ADR 0011). */
-function LiveActivity({ events }: { events: LiveEvent[] }) {
-  return (
-    <section data-testid="live-activity" aria-label="Live activity" className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl bg-night px-4 py-3 text-sm text-ivory">
-      <span className="flex items-center gap-2 font-semibold text-gold">
-        <Activity aria-hidden className="h-4 w-4" />
-        Live activity
-      </span>
-      {events.length === 0 ? (
-        <span className="text-mist">Waiting for a live scan. Scan a code and it shows here within 10 seconds.</span>
-      ) : (
-        <ul aria-live="polite" className="flex flex-col gap-1">
-          {events.map((e, i) => (
-            <li key={e.id} data-testid="live-event" className={`flex items-center gap-2 ${i === 0 ? 'live-tag font-semibold' : 'text-mist'}`}>
-              <span aria-hidden className={`h-2 w-2 shrink-0 rounded-full ${i === 0 ? 'bg-series-live' : 'bg-mist/50'}`} />
-              <span className="tabular-nums">{timeOf(e.at)}</span>
-              <span>{e.text}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-  )
-}
-
-const KIND_TEXT = { live: 'Live', synthetic: 'Synthetic data', mixed: 'Live + synthetic data' } as const
-
-/** Four headline numbers for the selection, each with its evidence tag and data label (ADR 0011). */
-function Headline({ data, flash }: { data: DashboardSummary; flash: Flash }) {
-  return (
-    <section data-testid="headline" aria-label="Headline numbers" className="grid grid-cols-2 gap-3 md:grid-cols-4">
-      {headlineNumbers(data).map((h) => {
-        const lit = (h.id === 'scans' && flash.scans > 0) || (h.id === 'feedback' && flash.feedback > 0)
-        return (
-          <div key={h.id} data-testid="headline-tile" data-kind={h.kind} className="flex flex-col gap-1 rounded-2xl bg-surface p-4 ring-1 ring-line">
-            <span className="text-sm font-medium text-ink-secondary">{h.label}</span>
-            <span className={`font-display text-3xl font-extrabold tracking-tight tabular-nums md:text-4xl ${lit ? 'live-flash' : ''}`}>{fmt(h.value)}</span>
-            <span className="mt-1 flex flex-wrap items-center gap-1.5">
-              <EvidenceTag kind={h.evidence} />
-              <span className={`text-xs font-semibold ${h.kind === 'live' ? 'text-green-deep' : 'text-synthetic'}`}>{KIND_TEXT[h.kind]}</span>
-            </span>
-          </div>
-        )
-      })}
-    </section>
-  )
-}
+const fmt = (n: number) => n.toLocaleString('en-GB')
 
 function timeOf(iso: string) {
   return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Europe/Berlin' })
 }
 
-const fmt = (n: number) => n.toLocaleString('en-GB')
+/** "29 Sep to 27 Nov", the 60-day window behind every number. */
+function windowText(asOf: string): string {
+  const end = new Date(asOf)
+  const start = new Date(end.getTime() - 60 * 86_400_000)
+  const key = (d: Date) => d.toISOString().slice(0, 10)
+  return `${dayLabel(key(start))} to ${dayLabel(key(end))}`
+}
 
-function Panel({ id, title, icon, kind, children }: { id: LivePanelId; title: string; icon: React.ReactNode; kind: ReturnType<typeof badgeKind>; children: React.ReactNode }) {
+/** A number that counts up on first load and tweens on change. data-value holds the final value. */
+function Num({ value, className = '', testId }: { value: number; className?: string; testId?: string }) {
+  const { shown, rose } = useAnimatedNumber(value)
   return (
-    <section data-testid={id} className="flex flex-col gap-4 rounded-2xl bg-surface p-5 ring-1 ring-line md:p-6">
+    <span data-testid={testId} data-value={value} className={`tabular-nums ${rose ? 'num-up' : ''} ${className}`}>
+      {fmt(shown)}
+    </span>
+  )
+}
+
+/** Card shell: title, one evidence icon next to it, the Live / Synthetic badge, a progress line while filters load. */
+function Card({
+  id,
+  title,
+  icon,
+  evidence,
+  kind,
+  children,
+  ping = 0,
+}: {
+  id: LivePanelId
+  title: string
+  icon: React.ReactNode
+  evidence?: EvidenceKind
+  kind: ReturnType<typeof badgeKind>
+  children: React.ReactNode
+  ping?: number
+}) {
+  const { pending } = useLive()
+  return (
+    <section data-testid={id} className="relative flex flex-col gap-4 overflow-hidden rounded-2xl bg-surface p-5 ring-1 ring-line md:p-6">
+      {pending && <span aria-hidden className="progress-line absolute inset-x-0 top-0 h-0.5" />}
+      {ping > 0 && <span key={ping} aria-hidden className="card-ping pointer-events-none absolute inset-0 rounded-2xl" />}
       <header className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 font-display text-base font-bold">
           {icon}
           {title}
+          <EvidenceTag kind={evidence ?? PANEL_EVIDENCE[id]} />
         </h2>
-        <span className="flex flex-wrap items-center gap-1.5">
-          <EvidenceTag kind={PANEL_EVIDENCE[id]} />
-          <DataBadge kind={kind} />
-        </span>
+        <DataBadge kind={kind} />
       </header>
       {children}
     </section>
   )
 }
 
-/**
- * Horizontal bars: live part in solid green, synthetic part striped (dataviz mark spec: thin bar,
- * rounded data end, 2px surface gap between segments). Hovering a row shows the exact split.
- */
-function Bars({ rows, label }: { rows: KeyedSplit[]; label: (key: string) => string }) {
-  const max = Math.max(1, ...rows.map((r) => r.live + r.synthetic))
+function Skeleton({ lines = 3 }: { lines?: number }) {
   return (
-    <ul className="flex flex-col gap-2 text-sm">
-      {rows.map((r) => {
-        const name = label(r.key)
-        return (
-          <li
-            key={r.key}
-            title={`${name}: ${fmt(r.live)} live, ${fmt(r.synthetic)} synthetic`}
-            className="grid grid-cols-[minmax(6rem,10rem)_1fr_3.5rem] items-center gap-3 rounded-md py-0.5 hover:bg-canvas/70"
+    <div aria-hidden className="flex flex-col gap-3">
+      <span className="skeleton h-9 w-28 rounded-lg" />
+      {Array.from({ length: lines }, (_, i) => (
+        <span key={i} className="skeleton h-3 rounded" style={{ width: `${90 - i * 15}%` }} />
+      ))}
+    </div>
+  )
+}
+
+function Empty({ hint }: { hint: string }) {
+  return (
+    <div className="fade-in">
+      <EmptyState hint={hint} />
+    </div>
+  )
+}
+
+// ---------- Live status line (spec 3.4) ----------
+
+/** "Live · last scan 12 s ago" or "Waiting for a scan"; a new scan expands into one line for a few seconds. */
+export function LiveStatus() {
+  const { data, event } = useLive()
+  const [now, setNow] = useState<number | null>(null)
+  useEffect(() => {
+    const tick = () => setNow(Date.now())
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [])
+  const lastLive = data?.scans.lastLive ?? null
+  return (
+    <section data-testid="live-activity" aria-label="Live activity" className="flex min-h-9 flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+      <span className="flex items-center gap-2 text-ink-secondary">
+        <span aria-hidden className={`h-2 w-2 rounded-full ${lastLive ? 'bg-series-live' : 'bg-ink-tertiary/50'}`} />
+        {lastLive && now ? (
+          <span>
+            <span className="font-semibold text-green-deep">Live</span> · last scan {agoText(lastLive, now)}
+          </span>
+        ) : (
+          <span>Waiting for a scan. Scan a code and it shows here within 10 seconds.</span>
+        )}
+      </span>
+      {/* Announced politely, and only for a new live scan or answer, never for a plain refresh. */}
+      <div aria-live="polite" className="contents">
+        {event && (
+          <span
+            key={event.id}
+            data-testid="live-event"
+            className="rise-in inline-flex items-center gap-2 rounded-full bg-green/10 px-3 py-1 font-semibold text-green-deep ring-1 ring-inset ring-green/30"
           >
-            <span className="line-clamp-2 leading-tight text-ink-secondary">{name}</span>
-            <span className="bar-wipe flex h-3 gap-0.5" aria-hidden>
-              {r.live > 0 && <span className="rounded-l-sm rounded-r-[4px] bg-series-live" style={{ width: `${(r.live / max) * 100}%` }} />}
-              {r.synthetic > 0 && <span className="mark-synthetic rounded-l-sm rounded-r-[4px]" style={{ width: `${(r.synthetic / max) * 100}%` }} />}
-            </span>
-            <span className="text-right font-medium tabular-nums text-ink">{fmt(r.live + r.synthetic)}</span>
-          </li>
-        )
-      })}
-    </ul>
+            <span className="tabular-nums">{timeOf(event.at)}</span>
+            <span>{event.text}</span>
+          </span>
+        )}
+      </div>
+    </section>
   )
 }
 
-/** Daily columns as one small SVG: synthetic striped at the base, live solid on top. Hover a day for its numbers. */
-function Spark({ days, title }: { days: { live: number; synthetic: number; label?: string }[]; title: string }) {
-  const max = Math.max(1, ...days.map((d) => d.live + d.synthetic))
-  const w = 300
-  const h = 56
-  const bw = w / Math.max(1, days.length)
-  const y = (v: number) => (v / max) * h
+// ---------- Overview: KPI cards and journey (spec 3.2, 4.3 item 8) ----------
+
+const KPI_NOTES: Record<string, string> = {
+  scans: 'Every code scan, bots left out',
+  visits: 'Product, collection and feedback pages',
+  shop: 'Mock website connector',
+  feedback: 'Answers on the feedback form',
+}
+
+export function Overview() {
+  const { data, pending, pulse } = useLive()
+  if (!data) {
+    return (
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="rounded-2xl bg-surface p-4 ring-1 ring-line">
+            <Skeleton lines={1} />
+          </div>
+        ))}
+      </div>
+    )
+  }
+  const range = windowText(data.asOf)
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="bar-wipe h-14 w-full" role="img" aria-label={title}>
-      <defs>
-        <pattern id="spark-stripe" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-          <rect width="4" height="4" fill="var(--color-series-synthetic)" />
-          <rect width="1.5" height="4" fill="white" opacity="0.38" />
-        </pattern>
-      </defs>
-      <line x1="0" x2={w} y1={h - 0.5} y2={h - 0.5} stroke="var(--color-line)" strokeWidth="1" />
-      {days.map((d, i) => {
-        const x = i * bw + 0.5
-        const bwInner = Math.max(1, bw - 1.5)
-        const hs = y(d.synthetic)
-        const hl = y(d.live)
-        return (
-          <g key={i}>
-            <title>{`${d.label ? `${d.label}: ` : ''}${fmt(d.live + d.synthetic)} (${fmt(d.live)} live)`}</title>
-            {/* Full-height hit area, bigger than the mark. */}
-            <rect x={i * bw} y={0} width={bw} height={h} fill="transparent" />
-            {hs > 0 && <rect x={x} y={h - hs} width={bwInner} height={hs} fill="url(#spark-stripe)" />}
-            {hl > 0 && <rect x={x} y={h - hs - hl} width={bwInner} height={hl} fill="var(--color-series-live)" />}
-          </g>
-        )
-      })}
-    </svg>
+    <div className="flex flex-col gap-4">
+      <section data-testid="headline" aria-label="Headline numbers" className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {headlineNumbers(data).map((h) => (
+          <div
+            key={h.id}
+            data-testid="headline-tile"
+            data-kind={h.kind}
+            title={`${fmt(h.value)} ${h.label.toLowerCase()}, ${range}`}
+            className="relative flex flex-col gap-1 overflow-hidden rounded-2xl bg-surface p-4 ring-1 ring-line"
+          >
+            {pending && <span aria-hidden className="progress-line absolute inset-x-0 top-0 h-0.5" />}
+            {h.id === 'scans' && pulse > 0 && <span key={pulse} aria-hidden className="card-ping pointer-events-none absolute inset-0 rounded-2xl" />}
+            <span className="flex items-center gap-1 text-sm font-medium text-ink-secondary">
+              {h.label}
+              <EvidenceTag kind={h.evidence} />
+            </span>
+            <Num value={h.value} className="font-display text-3xl font-extrabold tracking-tight md:text-4xl" />
+            <span className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-ink-tertiary">
+              <DataBadge kind={h.kind} />
+              <span>{KPI_NOTES[h.id]}</span>
+            </span>
+          </div>
+        ))}
+      </section>
+      <Journey data={data} />
+    </div>
   )
 }
 
-/** "+N live" next to a number that just went up. Static under reduced motion. */
-function LiveTag({ n }: { n: number }) {
-  if (n <= 0) return null
-  return <span className="live-tag rounded-full bg-series-live px-2 py-0.5 text-xs font-semibold text-white">+{fmt(n)} live</span>
+/** QR scan, product page, feedback, shop click: widths proportional to the counts, no conversion rates (ADR 0012). */
+function Journey({ data }: { data: DashboardSummary }) {
+  const mounted = useMounted()
+  const reduced = useReducedMotion()
+  const steps = journeySteps(data)
+  return (
+    <section data-testid="journey" aria-labelledby="journey-title" className="rounded-2xl bg-surface p-5 ring-1 ring-line md:p-6">
+      <header className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+        <h2 id="journey-title" className="flex items-center gap-2 font-display text-base font-bold">
+          <Route aria-hidden className="h-4 w-4 text-green" />
+          From pack to shop
+        </h2>
+        <p className="text-xs text-ink-tertiary">Count per step, last 60 days. The steps mix sources, so no rates are shown.</p>
+      </header>
+      <ol className="flex flex-col">
+        {steps.map((s, i) => (
+          <li key={s.id} data-testid="journey-step" className="flex flex-col">
+            {i > 0 && (
+              <span aria-hidden className="ml-3 h-3 w-px bg-line">
+                <span className="draw-line block h-full w-px bg-ink-tertiary/60" style={{ '--i': i } as React.CSSProperties} />
+              </span>
+            )}
+            <div className="grid grid-cols-[minmax(7rem,11rem)_1fr_auto] items-center gap-3">
+              <span className="flex flex-wrap items-center gap-1 text-sm font-medium">
+                {s.label}
+                <EvidenceTag kind={s.evidence} />
+              </span>
+              <span className="h-3 rounded-full bg-canvas">
+                <span
+                  className={`grow-row block h-full rounded-full ${s.kind === 'synthetic' ? 'mark-synthetic' : s.kind === 'live' ? 'bg-series-live' : 'bg-green'}`}
+                  style={{ width: mounted ? `${Math.max(s.share * 100, s.value > 0 ? 1 : 0)}%` : '0%', transitionDelay: reduced ? '0ms' : `${i * 150}ms` }}
+                />
+              </span>
+              <span className="flex items-center gap-2">
+                <Num value={s.value} className="w-16 text-right font-display text-lg font-bold" />
+                <DataBadge kind={s.kind} className="hidden sm:inline-flex" />
+              </span>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+  )
 }
 
-function ScansPanel({ data, view, flash, collectionId, show }: { data: DashboardSummary | null; view: View; flash: number; collectionId?: string; show: { market: boolean; campaign: boolean } }) {
+// ---------- Scans and website (row 2) ----------
+
+export function ScansCard() {
+  const { data, view, collectionId, query, pulse } = useLive()
   const s = data?.scans
   const total = s ? s.total.live + s.total.synthetic : 0
-  // Every bar of the collection gets a row, with 0 when the selection has no scans for it.
+  const q = new URLSearchParams(query)
+  const show = breakdownsToShow({ market: q.get('market') || null, campaign: q.get('campaign') || null })
   const bySku = s
     ? collectionId
       ? skusInCollection(collectionId).map((sku) => s.bySku.find((r) => r.key === sku.id) ?? { key: sku.id, live: 0, synthetic: 0 })
       : s.bySku
     : []
   return (
-    <Panel id="panel-scans" title="QR scans" icon={<BarChart3 aria-hidden className="h-4 w-4 text-green" />} kind={badgeKind(s?.total ?? { live: 0, synthetic: 0 })}>
-      {!s || total === 0 ? (
-        <EmptyState hint={data ? 'No scans in this selection yet.' : 'Waiting for data…'} />
+    <Card id="panel-scans" title="QR scans" icon={<BarChart3 aria-hidden className="h-4 w-4 text-green" />} kind={badgeKind(s?.total ?? { live: 0, synthetic: 0 })} ping={pulse}>
+      {!data ? (
+        <Skeleton />
+      ) : !s || total === 0 ? (
+        <Empty hint="No scans in this selection yet." />
       ) : (
         <>
           <p className="flex flex-wrap items-baseline gap-2">
-            <span data-testid="scan-total" className={`font-display text-4xl font-extrabold tracking-tight tabular-nums ${flash > 0 ? 'live-flash' : ''}`}>{fmt(total)}</span>
-            <LiveTag n={flash} />
+            <Num testId="scan-total" value={total} className="font-display text-4xl font-extrabold tracking-tight" />
             <span className="text-xs text-ink-secondary">
               last 60 days · <span data-testid="scan-live">{fmt(s.total.live)}</span> live
             </span>
           </p>
-          <Spark days={s.byDay.map((d) => ({ live: d.live, synthetic: d.synthetic, label: d.key }))} title="Scans per day, last 60 days" />
+          <DayColumns days={s.byDay} title="Scans per day, last 60 days" unit="scans" />
           {show.campaign && (
             <>
               <h3 className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink-tertiary">By campaign</h3>
-              <Bars rows={s.byCampaign} label={campaignName} />
+              <HBars rows={s.byCampaign} label={campaignName} title="Scans by campaign" />
             </>
           )}
           {show.market && (
             <>
               <h3 className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink-tertiary">By market</h3>
-              <Bars rows={s.byMarket} label={marketName} />
+              <HBars rows={s.byMarket} label={marketName} title="Scans by market" />
             </>
           )}
           {view === 'collection' && (
             <>
               <h3 className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink-tertiary">By bar</h3>
-              <Bars rows={[...bySku, { key: 'collection code', ...s.collectionCode }]} label={(k) => (k === 'collection code' ? 'Collection code, no bar chosen' : skuName(k))} />
+              <HBars
+                rows={[...bySku, { key: 'collection code', ...s.collectionCode }]}
+                label={(k) => (k === 'collection code' ? 'Collection code, no bar chosen' : skuName(k))}
+                title="Scans by bar"
+              />
             </>
           )}
         </>
       )}
-    </Panel>
+    </Card>
   )
 }
 
+export function WebCard() {
+  const { data } = useLive()
+  const w = data?.web
+  const t = w?.total
+  return (
+    <Card id="panel-web" title="Website metrics" icon={<Globe aria-hidden className="h-4 w-4 text-green" />} kind="synthetic">
+      {!data ? (
+        <Skeleton />
+      ) : !t || t.sessions === 0 ? (
+        <Empty hint="No website data in this selection." />
+      ) : (
+        <>
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+            {(
+              [
+                ['Sessions', t.sessions],
+                ['Page views', t.pageViews],
+                ['Video plays', t.videoPlays],
+                ['Shop clicks', t.shopClicks],
+              ] as const
+            ).map(([label, v]) => (
+              <div key={label}>
+                <dt className="text-xs text-ink-tertiary">{label}</dt>
+                <dd>
+                  <Num value={v} className="font-display text-2xl font-extrabold tracking-tight" />
+                </dd>
+              </div>
+            ))}
+          </dl>
+          <DayColumns days={w!.byDay.map((d) => ({ key: d.key, live: 0, synthetic: d.sessions }))} title="Sessions per day, last 60 days" unit="sessions" />
+          <p className="text-xs text-ink-tertiary">Mock website connector. Videos stay on fairafric’s own site.</p>
+        </>
+      )}
+    </Card>
+  )
+}
+
+// ---------- Feedback and page views (row 3) ----------
+
 const PAGE_LABELS: Record<string, string> = { product: 'Product page', feedback: 'Feedback page', collection: 'Collection page' }
 
-function PageViewsPanel({ data }: { data: DashboardSummary | null }) {
+export function PageViewsCard() {
+  const { data } = useLive()
   const rows = data?.pageViews.byPage ?? []
   const split = sumSplits(rows)
   return (
-    <Panel id="panel-page-views" title="Page views" icon={<Eye aria-hidden className="h-4 w-4 text-green" />} kind={badgeKind(split)}>
-      {split.live + split.synthetic === 0 ? <EmptyState hint="No page views in this selection yet." /> : <Bars rows={rows} label={(k) => PAGE_LABELS[k] ?? k} />}
-    </Panel>
+    <Card id="panel-page-views" title="Page views" icon={<Eye aria-hidden className="h-4 w-4 text-green" />} kind={badgeKind(split)}>
+      {!data ? (
+        <Skeleton />
+      ) : split.live + split.synthetic === 0 ? (
+        <Empty hint="No page views in this selection yet." />
+      ) : (
+        <>
+          <HBars rows={rows} label={(k) => PAGE_LABELS[k] ?? k} title="Page views by page" />
+          <DataTable
+            caption="Page views by page"
+            head={['Page', 'Live', 'Synthetic', 'Total']}
+            rows={rows.map((r) => [PAGE_LABELS[r.key] ?? r.key, fmt(r.live), fmt(r.synthetic), fmt(r.live + r.synthetic)])}
+          />
+        </>
+      )}
+    </Card>
   )
 }
 
 const NOTE_LABEL = new Map(TASTE_NOTES.map((n) => [n.value, n.label]))
+const RECENT_VISIBLE = 3
 
-function FeedbackPanel({ data, flash }: { data: DashboardSummary | null; flash: number }) {
+/** Five stars filled to the average, to one decimal place, left to right 60 ms apart. */
+function Stars({ avg }: { avg: number }) {
+  const mounted = useMounted()
+  const reduced = useReducedMotion()
+  return (
+    <span className="inline-flex gap-0.5" aria-hidden>
+      {starFills(avg).map((f, i) => (
+        <span key={i} className="relative inline-block h-4 w-4 text-line">
+          <StarShape />
+          <span
+            className="absolute inset-y-0 left-0 overflow-hidden text-gold transition-[width] duration-300"
+            style={{ width: mounted ? `${f * 100}%` : '0%', transitionDelay: reduced ? '0ms' : `${i * 60}ms` }}
+          >
+            <span className="block h-4 w-4">
+              <StarShape />
+            </span>
+          </span>
+        </span>
+      ))}
+    </span>
+  )
+}
+
+function StarShape() {
+  return (
+    <svg viewBox="0 0 20 20" className="h-4 w-4" fill="currentColor">
+      <path d="M10 1.5l2.6 5.5 6 .7-4.5 4.1 1.2 5.9L10 14.8l-5.3 2.9 1.2-5.9L1.4 7.7l6-.7z" />
+    </svg>
+  )
+}
+
+export function FeedbackCard() {
+  const { data } = useLive()
   const f = data?.feedback
   const total = f ? f.total.live + f.total.synthetic : 0
+  const [open, setOpen] = useState<string | null>(null)
+  const [more, setMore] = useState(false)
+  const mounted = useMounted()
+  const reduced = useReducedMotion()
+  const max = Math.max(1, ...(f?.themes ?? []).map((t) => t.live + t.synthetic))
   return (
-    <Panel id="panel-feedback" title="Feedback" icon={<MessageSquare aria-hidden className="h-4 w-4 text-green" />} kind={badgeKind(f?.total ?? { live: 0, synthetic: 0 })}>
-      {!f || total === 0 ? (
-        <EmptyState hint="No feedback in this selection yet." />
+    <Card id="panel-feedback" title="Feedback" icon={<MessageSquare aria-hidden className="h-4 w-4 text-green" />} kind={badgeKind(f?.total ?? { live: 0, synthetic: 0 })}>
+      {!data ? (
+        <Skeleton />
+      ) : !f || total === 0 ? (
+        <Empty hint="No feedback in this selection yet." />
       ) : (
         <>
-          <p className="flex flex-wrap items-baseline gap-x-2 text-sm">
-            <span className={`font-display text-4xl font-extrabold tracking-tight tabular-nums ${flash > 0 ? 'live-flash' : ''}`}>{fmt(total)}</span> answers
-            <LiveTag n={flash} />
-            {f.avgRating !== null && <span className="text-ink-secondary">· average rating {f.avgRating} / 5</span>}
-          </p>
-          <h3 className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink-tertiary">Themes</h3>
-          <Bars rows={f.themes} label={(k) => k} />
-          {f.themes[0] && (
-            <p className="rounded-xl border-l-4 border-series-synthetic bg-synthetic-surface px-4 py-3 text-sm italic text-ink-secondary">
-              Example ({f.themes[0].key}): “{THEME_EXAMPLES[f.themes[0].key as Theme] ?? ''}” <span className="mt-1 block text-xs font-semibold not-italic text-synthetic">Synthetic example</span>
+          <div className="flex flex-wrap items-end gap-x-6 gap-y-2">
+            <p className="flex items-baseline gap-2 text-sm">
+              <Num value={total} className="font-display text-4xl font-extrabold tracking-tight" /> answers
             </p>
-          )}
-          {f.themes.length > 1 && (
-            <details className="group text-sm">
-              <summary className="flex min-h-11 cursor-pointer list-none items-center gap-1 font-medium text-green-deep [&::-webkit-details-marker]:hidden">
-                <span className="transition group-open:rotate-90" aria-hidden>
-                  ›
-                </span>
-                An example for every theme
-              </summary>
-              <ul className="mt-1 flex flex-col gap-2">
-                {f.themes.slice(1).map((t) => (
-                  <li key={t.key} className="rounded-xl bg-synthetic-surface px-4 py-2 text-ink-secondary">
-                    <span className="font-semibold not-italic text-ink">{t.key}: </span>
-                    <span className="italic">“{THEME_EXAMPLES[t.key as Theme] ?? ''}”</span>
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-2 text-xs font-semibold text-synthetic">Synthetic examples</p>
-            </details>
-          )}
+            {f.avgRating !== null && (
+              <p className="flex items-center gap-2 text-sm text-ink-secondary">
+                <span className="font-display text-2xl font-bold tabular-nums text-ink">{f.avgRating}</span>
+                <Stars avg={f.avgRating} />
+                <span>average rating {f.avgRating} / 5</span>
+              </p>
+            )}
+          </div>
+
+          <h3 className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink-tertiary">Themes · select one for an example</h3>
+          <ul className="flex flex-col gap-1 text-sm">
+            {f.themes.map((t, i) => {
+              const isOpen = open === t.key
+              const example = THEME_EXAMPLES[t.key as Theme]
+              return (
+                <li key={t.key}>
+                  <button
+                    type="button"
+                    aria-expanded={isOpen}
+                    onClick={() => setOpen(isOpen ? null : t.key)}
+                    title={`${t.key}: ${fmt(t.live)} live, ${fmt(t.synthetic)} synthetic`}
+                    className="grid min-h-9 w-full grid-cols-[minmax(6rem,10rem)_1fr_3.5rem] items-center gap-3 rounded-md text-left hover:bg-canvas/70"
+                  >
+                    <span className="flex items-center gap-1 text-ink-secondary">
+                      <ChevronDown aria-hidden className={`h-3.5 w-3.5 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                      {t.key}
+                    </span>
+                    <span className="flex h-3 gap-0.5" aria-hidden>
+                      {t.live > 0 && <span className="grow-row rounded-r-[4px] bg-series-live" style={{ width: mounted ? `${(t.live / max) * 100}%` : '0%', transitionDelay: reduced ? '0ms' : `${Math.min(i, 6) * 40}ms` }} />}
+                      {t.synthetic > 0 && (
+                        <span className="grow-row mark-synthetic rounded-r-[4px]" style={{ width: mounted ? `${(t.synthetic / max) * 100}%` : '0%', transitionDelay: reduced ? '0ms' : `${Math.min(i, 6) * 40}ms` }} />
+                      )}
+                    </span>
+                    <span className="text-right font-medium tabular-nums text-ink">{fmt(t.live + t.synthetic)}</span>
+                  </button>
+                  <div className="expand" data-open={isOpen}>
+                    <div>
+                      {example && (
+                        <p className="mx-1 my-2 rounded-xl border-l-4 border-series-synthetic bg-synthetic-surface px-4 py-3 text-sm italic text-ink-secondary">
+                          “{example}” <span className="mt-1 block text-xs font-semibold not-italic text-synthetic">Synthetic example</span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+
           <h3 className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink-tertiary">Latest live answers</h3>
           {f.recent.length === 0 ? (
             <p className="text-xs text-ink-tertiary">No live answers yet. Scan a feedback code to add one.</p>
           ) : (
-            <ul data-testid="recent-feedback" className="flex flex-col gap-2 text-sm">
-              {f.recent.map((r) => (
-                <li key={r.ts + r.tasteNote} className="rounded-xl border-l-4 border-series-live bg-canvas px-4 py-3">
-                  <p className="font-medium">
-                    <span className="text-gold" aria-label={`${r.rating} of 5 stars`}>{'★'.repeat(r.rating)}</span> {NOTE_LABEL.get(r.tasteNote) ?? r.tasteNote}
-                  </p>
-                  {r.freeText && <p className="text-ink-secondary">{r.freeText}</p>}
-                  <p className="text-ink-tertiary">
-                    {skuName(r.sku)} · {r.campaign ? campaignName(r.campaign) : 'No campaign'} · {r.market ? marketName(r.market) : 'No market'}
-                  </p>
-                </li>
-              ))}
-            </ul>
+            <>
+              <ul data-testid="recent-feedback" className="flex flex-col gap-2 text-sm">
+                {(more ? f.recent : f.recent.slice(0, RECENT_VISIBLE)).map((r) => (
+                  <li key={r.ts + r.tasteNote} className="rounded-xl border-l-4 border-series-live bg-canvas px-4 py-3">
+                    <p className="font-medium">
+                      <span className="text-gold" aria-label={`${r.rating} of 5 stars`}>
+                        {'★'.repeat(r.rating)}
+                      </span>{' '}
+                      {NOTE_LABEL.get(r.tasteNote) ?? r.tasteNote}
+                    </p>
+                    {r.freeText && <p className="text-ink-secondary">{r.freeText}</p>}
+                    <p className="text-ink-tertiary">
+                      {skuName(r.sku)} · {r.campaign ? campaignName(r.campaign) : 'No campaign'} · {r.market ? marketName(r.market) : 'No market'}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+              {f.recent.length > RECENT_VISIBLE && (
+                <button type="button" onClick={() => setMore((m) => !m)} className="min-h-9 self-start text-sm font-semibold text-green-deep underline-offset-4 hover:underline">
+                  {more ? 'Show fewer' : `Show more (${f.recent.length - RECENT_VISIBLE})`}
+                </button>
+              )}
+            </>
           )}
         </>
       )}
-    </Panel>
-  )
-}
-
-function WebPanel({ data }: { data: DashboardSummary | null }) {
-  const w = data?.web
-  const t = w?.total
-  return (
-    <Panel id="panel-web" title="Website metrics" icon={<Globe aria-hidden className="h-4 w-4 text-green" />} kind="synthetic">
-      {!t || t.sessions === 0 ? (
-        <EmptyState hint="No website data in this selection." />
-      ) : (
-        <>
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-            {[
-              ['Sessions', t.sessions],
-              ['Page views', t.pageViews],
-              ['Video plays', t.videoPlays],
-              ['Shop clicks', t.shopClicks],
-            ].map(([label, v]) => (
-              <div key={label}>
-                <dt className="text-xs text-ink-tertiary">{label}</dt>
-                <dd className="font-display text-2xl font-extrabold tracking-tight tabular-nums">{fmt(v as number)}</dd>
-              </div>
-            ))}
-          </dl>
-          <Spark days={w.byDay.map((d) => ({ live: 0, synthetic: d.sessions, label: d.key }))} title="Sessions per day, last 60 days" />
-          <p className="text-xs text-ink-tertiary">Mock website connector. Videos stay on fairafric’s own site.</p>
-        </>
-      )}
-    </Panel>
+    </Card>
   )
 }

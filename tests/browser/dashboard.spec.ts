@@ -46,27 +46,35 @@ test.describe('signed in', () => {
     }
     await expect(page.getByTestId('agent-answer').getByTestId('evidence-tag')).toHaveAttribute('data-evidence', 'attributed')
     await expect(page.getByTestId('hypotheses-panel').getByTestId('evidence-tag')).toHaveAttribute('data-evidence', 'correlation')
-    await page.getByText('How sure is each number?').click()
+    await page.getByText('How sure?').click()
     await expect(page.getByTestId('evidence-legend-item')).toHaveCount(4)
   })
 
-  test('DS-5: data sources panel labels every source and Request opens the pilot note', async ({ page }) => {
+  test('DS-5: the data sources drawer labels every source, Request opens the pilot note, Escape closes it', async ({ page }) => {
     for (const path of ['/dashboard', '/dashboard?view=collection&id=vegan-creamy']) {
       await page.goto(path)
+      const scrollBefore = await page.evaluate(() => window.scrollY)
+      const opener = page.getByTestId('open-sources')
+      await opener.click()
       const panel = page.getByTestId('data-sources-panel')
       await expect(panel).toBeVisible()
+      expect(await page.evaluate(() => window.scrollY)).toBe(scrollBefore)
       await expect(panel.getByTestId('source-connected')).toHaveCount(3)
       const available = panel.getByTestId('source-available')
       const n = await available.count()
       expect(n).toBeGreaterThanOrEqual(4)
       await expect(available.filter({ hasText: 'Demo: not connected' })).toHaveCount(n)
+      const first = available.first()
+      await expect(first.getByTestId('source-note')).toBeHidden()
+      await first.getByText('Request').click()
+      await expect(first.getByTestId('source-note')).toContainText('Not connected in this demo')
+      await page.keyboard.press('Escape')
+      await expect(panel).toBeHidden()
+      await expect(opener).toBeFocused()
     }
-    await page.getByRole('link', { name: 'Data sources' }).click()
-    await expect(page).toHaveURL(/#data-sources$/)
-    const first = page.getByTestId('source-available').first()
-    await expect(first.getByTestId('source-note')).toBeHidden()
-    await first.getByText('Request').click()
-    await expect(first.getByTestId('source-note')).toContainText('Not connected in this demo')
+    // The compact list at the bottom opens the same drawer.
+    await page.getByRole('button', { name: 'See all data sources' }).click()
+    await expect(page.getByTestId('data-sources-panel')).toBeVisible()
   })
 
   test('a test scan shows on the open dashboard within 10 seconds', async ({ page, request }) => {
@@ -105,20 +113,27 @@ test.describe('signed in', () => {
     await expect(page.getByTestId('panel-scans')).toContainText('Collection code, no bar chosen')
   })
 
-  test('P-2: filters stay in the URL', async ({ page }) => {
+  test('P-2: filters apply on change, stay in the URL, and show as removable chips', async ({ page }) => {
     await page.goto('/dashboard')
-    await page.getByLabel('Market').selectOption('AT')
-    await page.getByRole('button', { name: 'Apply' }).click()
+    await expect(page.getByRole('button', { name: 'Apply' })).toHaveCount(0)
+    await page.getByRole('combobox', { name: 'Market', exact: true }).selectOption('AT')
     await expect(page).toHaveURL(/market=AT/)
-    await expect(page.getByLabel('Market')).toHaveValue('AT')
+    await expect(page.getByRole('combobox', { name: 'Market', exact: true })).toHaveValue('AT')
+    const chips = page.getByTestId('filter-chips')
+    await expect(chips).toContainText('Austria')
+    // Every market stays listed; one without scans for this bar is shown but disabled.
+    await expect(page.getByRole('combobox', { name: 'Market', exact: true }).locator('option')).toHaveCount(9)
+    await chips.getByRole('button', { name: 'Remove filter Austria' }).click()
+    await expect(page).not.toHaveURL(/market=/)
+    await expect(page.getByTestId('filter-chips')).toHaveCount(0)
   })
 
   test('P-4: a failed poll keeps the last numbers and shows Reconnecting', async ({ page }) => {
     await page.goto('/dashboard')
-    const total = await page.getByTestId('scan-total').textContent()
+    const total = await page.getByTestId('scan-total').getAttribute('data-value')
     await page.route('**/api/dashboard**', (route) => route.abort())
     await expect(page.getByTestId('poll-status')).toContainText('Reconnecting', { timeout: 15_000 })
-    await expect(page.getByTestId('scan-total')).toHaveText(total!)
+    await expect(page.getByTestId('scan-total')).toHaveAttribute('data-value', total!)
     await page.unroute('**/api/dashboard**')
     await expect(page.getByTestId('poll-status')).not.toContainText('Reconnecting', { timeout: 15_000 })
   })
@@ -128,11 +143,53 @@ test.describe('signed in', () => {
     await expect(page.getByTestId('competitor-panel')).toBeVisible()
     await expect(page.getByTestId('hypotheses-panel')).toBeVisible()
     const check = page.getByTestId('insight-check').first()
-    await expect(check).toContainText('Useful and accurate?')
+    await expect(check).toContainText('Was this useful?')
     await page.route('**/api/insight-check', (route) => route.fulfill({ status: 204 }))
     await check.getByRole('button', { name: 'Yes' }).click()
     await expect(check).toContainText('Thanks')
     await page.reload()
     await expect(page.getByTestId('insight-check').first()).toContainText('Thanks')
+  })
+
+  test('RD-6: sticky section links follow the scroll; one key replaces the per-card pills', async ({ page }) => {
+    await page.goto('/dashboard')
+    const nav = page.getByRole('navigation', { name: 'Sections' })
+    await expect(nav.getByRole('link')).toHaveCount(7)
+    await expect(page.getByTestId('confidence-key')).toBeVisible()
+    for (const id of ['panel-scans', 'panel-feedback']) {
+      const tag = page.getByTestId(id).getByTestId('evidence-tag')
+      await expect(tag).toHaveText('')
+      await expect(tag).toHaveAttribute('aria-label', /^Observed: /)
+    }
+    await nav.getByRole('link', { name: 'Agent' }).click()
+    await expect(nav.getByRole('link', { name: 'Agent' })).toHaveAttribute('aria-current', 'location')
+    await expect(page.getByTestId('top-bar')).toBeInViewport()
+  })
+
+  test('RD-7: the agent answer streams after a status line, and Stop shows it all', async ({ page }) => {
+    await page.goto('/dashboard?ask=top-theme-dark-92')
+    const answer = page.getByTestId('agent-answer')
+    // The status line shows for under a second (its wording is unit-tested in RD-5); the stream lasts a few seconds.
+    await expect(answer.getByTestId('source-list')).toHaveCount(0)
+    await answer.getByTestId('agent-stop').click()
+    await expect(answer.getByTestId('agent-answer-text')).toContainText('comes up most')
+    await expect(answer.getByTestId('source-list')).toBeVisible()
+    await expect(answer.getByTestId('insight-check')).toContainText('Was this helpful?')
+  })
+})
+
+test.describe('reduced motion', () => {
+  test.use({ reducedMotion: 'reduce' })
+  test.beforeEach(async ({ context, request, baseURL }) => {
+    await signInContext(context, request, baseURL!)
+  })
+
+  test('RD-8: numbers show their final value at once and the answer needs no streaming', async ({ page }) => {
+    await page.goto('/dashboard?ask=top-theme-dark-92')
+    const total = page.getByTestId('scan-total')
+    const value = Number(await total.getAttribute('data-value'))
+    await expect(total).toHaveText(value.toLocaleString('en-GB'), { timeout: 1000 })
+    await expect(page.getByTestId('agent-stop')).toHaveCount(0)
+    await expect(page.getByTestId('agent-answer').getByTestId('source-list')).toBeVisible()
   })
 })

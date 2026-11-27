@@ -26,15 +26,15 @@ Show nothing yet. Hold up the printed bar or the QR sheet.
 ## 3. Dashboard (3 min)
 
 1. Open `/dashboard` (signed in before the meeting). The live scan from step 2 is in the counts (within 10 seconds).
-2. Product view: Dark 92%. Scans, website metrics, feedback themes. Point to the "Synthetic data" badges: history is generated, the scan you just made is live. Then the evidence tags: scans and feedback are "Observed", website metrics "Attributed" (linked through campaign tags). Open "How sure is each number?" if asked.
+2. "Product performance", One bar: Dark 92%. Start at the Overview: four headline numbers, then "From pack to shop" (scan, product page, feedback, shop click; no rates, because the steps mix sources). Point to the "Synthetic data" badges: history is generated, the scan you just made is live, and the status line says when the last live scan came in. Then the key under the filters: the small icon next to each card title says how sure the number is (scans and feedback "Observed", website metrics "Attributed"). Open "How sure?" if asked. The section links at the top jump to Scans, Website, Feedback, Agent, Ideas and Sources.
 3. Filter market **Austria**, then campaign **Shelf talker, Q4**.
-4. Switch to collection view: **Vegan Creamy line** (one code, two bars).
+4. Switch to **All bars**: **Vegan Creamy line** (one code, two bars). Filters apply as soon as you pick one; remove a filter with its chip.
 5. Feedback themes: one example sentence per theme. The feedback you submitted appears with SKU, campaign and market.
-6. In the product view, the "Market context" and "Ideas to test" cards: short snippets with sources and dates. "Sources are linked so you can check any detail." Packaging ideas are marked "Suggestion, not validated" (they are also the branding team).
+6. Back on One bar, the Ideas row: "Market context", "Ideas to test" and the packaging ideas, one card each: short snippets with sources and dates. "Sources are linked so you can check any detail." Packaging ideas are marked "Suggestion, not validated" (they are also the branding team).
 
 ## 4. Agent (2 min)
 
-Frame it first: not a chatbot. Every bar on the shelf feeds one product, and the product agent reports from that memory. Click the prepared questions in turn; read the answer, point to its evidence tag, then open its sources.
+Frame it first: not a chatbot. Every bar on the shelf feeds one product, and the product agent reports from that memory. Click the prepared questions in turn: the agent says what it is looking at, the answer types out (Stop shows it at once), then its sources appear. Point to its evidence label, then open the sources.
 
 1. "Which packaging had the most scans in Austria?" Expected: the Dark 92% wrapper code leads the shelf talker.
 2. "Which campaign drove visits to the feedback page?" Expected: the shelf talker.

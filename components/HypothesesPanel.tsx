@@ -3,22 +3,22 @@ import { HypothesisLabel } from './HypothesisLabel'
 import { IDEAS_EVIDENCE } from '@/lib/evidence'
 import { insightsFor } from '@/lib/insights'
 
-/** Improvement suggestions for the product view: one line each, labelled, with data basis (CLAUDE.md scope item 10). */
+/** Improvement suggestions: one light card per idea, labelled, with its data basis (CLAUDE.md scope item 10, ADR 0012). */
 export function HypothesesPanel({ sku }: { sku?: string }) {
   const { hypotheses } = insightsFor(sku)
   if (hypotheses.length === 0) return null
   return (
-    <section data-testid="hypotheses-panel" className="p-5">
-      <header className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-display text-base font-bold">Ideas to test</h2>
+    <section data-testid="hypotheses-panel" aria-labelledby="hypotheses-title" className="flex flex-col gap-3">
+      <h3 id="hypotheses-title" className="flex items-center gap-2 font-display text-base font-bold">
+        Ideas to test
         <EvidenceTag kind={IDEAS_EVIDENCE} />
-      </header>
-      <ul className="divide-y divide-line text-sm">
+      </h3>
+      <ul className="grid gap-3 sm:grid-cols-2">
         {hypotheses.map((h) => (
-          <li key={h.id} data-testid="hypothesis" className="flex flex-col items-start gap-1.5 py-3">
-            <span className="font-medium">{h.statement}</span>
+          <li key={h.id} data-testid="hypothesis" className="flex flex-col items-start gap-2 rounded-2xl bg-surface p-4 text-sm ring-1 ring-line">
             <HypothesisLabel />
-            <p className="text-xs text-ink-tertiary">Data basis: {h.basis.join(' · ')}</p>
+            <span className="font-medium">{h.statement}</span>
+            <p className="mt-auto text-xs text-ink-tertiary">Data basis: {h.basis.join(' · ')}</p>
           </li>
         ))}
       </ul>

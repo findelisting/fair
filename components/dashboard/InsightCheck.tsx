@@ -3,11 +3,12 @@
 import { useEffect, useState } from 'react'
 import { ThumbsDown, ThumbsUp } from 'lucide-react'
 
-// "Useful and accurate?" (ADR 0001 amendment 2, ADR 0007 decision 5). Optional, once per card per browser session.
+// "Was this useful?" (ADR 0001 amendment 2, ADR 0007 decision 5). Optional, once per card per browser session.
 // Remembered in sessionStorage, never in a cookie. Sends card id and answer only.
 const KEY = (cardId: string) => `insight-check:${cardId}`
 
-export function InsightCheck({ cardId }: { cardId: string }) {
+/** prompt: "Was this useful?" for a section, "Was this helpful?" for an agent answer (ADR 0012). */
+export function InsightCheck({ cardId, prompt = 'Was this useful?', className = '' }: { cardId: string; prompt?: string; className?: string }) {
   const [done, setDone] = useState(false)
 
   useEffect(() => {
@@ -35,16 +36,16 @@ export function InsightCheck({ cardId }: { cardId: string }) {
   }
 
   return (
-    <div data-testid="insight-check" className="mt-auto flex items-center gap-2 border-t border-line bg-canvas/50 px-5 py-1.5 text-xs text-ink-tertiary">
+    <div data-testid="insight-check" className={`flex items-center gap-2 text-xs text-ink-tertiary ${className}`}>
       {done ? (
         <span>Thanks for the feedback.</span>
       ) : (
         <>
-          <span>Useful and accurate?</span>
-          <button type="button" aria-label="Yes" onClick={() => send('up')} className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-surface hover:text-green">
+          <span>{prompt}</span>
+          <button type="button" aria-label="Yes" onClick={() => send('up')} className="flex h-11 w-11 items-center justify-center rounded-full hover:bg-surface hover:text-green">
             <ThumbsUp aria-hidden className="h-3.5 w-3.5" />
           </button>
-          <button type="button" aria-label="No" onClick={() => send('down')} className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-surface hover:text-ink">
+          <button type="button" aria-label="No" onClick={() => send('down')} className="flex h-11 w-11 items-center justify-center rounded-full hover:bg-surface hover:text-ink">
             <ThumbsDown aria-hidden className="h-3.5 w-3.5" />
           </button>
         </>

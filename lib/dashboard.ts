@@ -2,6 +2,7 @@
 import { collectionById, isCampaign, isMarket, seedPayload, skuById } from './catalog'
 import type { DataKind } from '@/components/DataBadge'
 import type { EvidenceKind } from './evidence'
+import { QUESTIONS, type QuestionId } from './agent'
 
 export type View = 'product' | 'collection'
 export interface DashboardParams {
@@ -139,13 +140,18 @@ export function dashboardQuery(p: DashboardParams): string {
   return q.toString()
 }
 
-/** P-7: one "Useful and accurate?" check per card kind and SKU. */
-export const INSIGHT_CARD_KINDS = ['market-context', 'ideas', 'packaging'] as const
+/**
+ * P-7: one "Was this useful?" check per card kind and SKU. ADR 0012 adds `insights` (one per Ideas section)
+ * and `agent:<question>` (one per agent answer); the older per-card kinds stay valid.
+ */
+export const INSIGHT_CARD_KINDS = ['market-context', 'ideas', 'packaging', 'insights'] as const
 export type InsightCardKind = (typeof INSIGHT_CARD_KINDS)[number]
 export const insightCardId = (kind: InsightCardKind, sku: string) => `${kind}:${sku}`
-export const INSIGHT_CARD_IDS: ReadonlySet<string> = new Set(
-  seedPayload.skus.flatMap((s) => INSIGHT_CARD_KINDS.map((k) => insightCardId(k, s.id))),
-)
+export const agentCardId = (question: QuestionId) => `agent:${question}`
+export const INSIGHT_CARD_IDS: ReadonlySet<string> = new Set([
+  ...seedPayload.skus.flatMap((s) => INSIGHT_CARD_KINDS.map((k) => insightCardId(k, s.id))),
+  ...QUESTIONS.map((q) => agentCardId(q.id)),
+])
 
 export const campaignName = (id: string) => seedPayload.campaigns.find((c) => c.id === id)?.name ?? id
 export const marketName = (code: string) => seedPayload.markets.find((m) => m.code === code)?.name ?? code
@@ -203,4 +209,66 @@ export function newLiveScan(prev: DashboardSummary, next: DashboardSummary): New
 /** A breakdown is hidden when its filter already leaves one value (it would repeat the total). */
 export function breakdownsToShow(filters: { market: string | null; campaign: string | null }): { market: boolean; campaign: boolean } {
   return { market: !filters.market, campaign: !filters.campaign }
+}
+
+// Dashboard redesign (ADR 0012): pure helpers for the filter chips, the option lists, the journey,
+// the status line and the star rating.
+
+export interface FilterChip {
+  param: 'market' | 'campaign'
+  label: string
+}
+
+/** Removable chips for the active market and campaign filters. The bar is never removable. */
+export function filterChips(p: Pick<DashboardParams, 'market' | 'campaign'>): FilterChip[] {
+  const chips: FilterChip[] = []
+  if (p.market) chips.push({ param: 'market', label: marketName(p.market) })
+  if (p.campaign) chips.push({ param: 'campaign', label: campaignName(p.campaign) })
+  return chips
+}
+
+/** Markets and campaigns with at least one scan in an unfiltered summary. Others are listed but disabled. */
+export function optionsWithScans(s: DashboardSummary): { markets: Set<string>; campaigns: Set<string> } {
+  const has = (rows: KeyedSplit[]) => new Set(rows.filter((r) => r.live + r.synthetic > 0).map((r) => r.key))
+  return { markets: has(s.scans.byMarket), campaigns: has(s.scans.byCampaign) }
+}
+
+export interface JourneyStep {
+  id: 'scan' | 'product' | 'feedback' | 'shop'
+  label: string
+  value: number
+  /** Share of the largest step, 0 to 1, so bar widths are proportional to the counts. */
+  share: number
+  kind: DataKind
+  evidence: EvidenceKind
+}
+
+/** QR scan, product page, feedback, shop click. No conversion rates: the steps mix sources (ADR 0012, decision 6). */
+export function journeySteps(s: DashboardSummary): JourneyStep[] {
+  const product = s.pageViews.byPage.find((r) => r.key === 'product') ?? { live: 0, synthetic: 0 }
+  const raw: Omit<JourneyStep, 'share'>[] = [
+    { id: 'scan', label: 'QR scan', value: s.scans.total.live + s.scans.total.synthetic, kind: badgeKind(s.scans.total), evidence: 'observed' },
+    { id: 'product', label: 'Product page', value: product.live + product.synthetic, kind: badgeKind(product), evidence: 'observed' },
+    { id: 'feedback', label: 'Feedback', value: s.feedback.total.live + s.feedback.total.synthetic, kind: badgeKind(s.feedback.total), evidence: 'observed' },
+    { id: 'shop', label: 'Shop click', value: s.web.total.shopClicks, kind: 'synthetic', evidence: 'attributed' },
+  ]
+  const max = Math.max(1, ...raw.map((r) => r.value))
+  return raw.map((r) => ({ ...r, share: r.value / max }))
+}
+
+/** "12 s ago", "4 min ago", "3 h ago", "2 days ago". */
+export function agoText(iso: string, nowMs: number): string {
+  const s = Math.max(0, Math.round((nowMs - new Date(iso).getTime()) / 1000))
+  if (s < 60) return `${s} s ago`
+  const m = Math.floor(s / 60)
+  if (m < 60) return `${m} min ago`
+  const h = Math.floor(m / 60)
+  if (h < 48) return `${h} h ago`
+  return `${Math.floor(h / 24)} days ago`
+}
+
+/** Fill of each of five stars for an average rating, to one decimal place: 4.3 gives [1, 1, 1, 1, 0.3]. */
+export function starFills(avg: number): number[] {
+  const v = Math.round(Math.min(5, Math.max(0, avg)) * 10) / 10
+  return [0, 1, 2, 3, 4].map((i) => Math.round(Math.min(1, Math.max(0, v - i)) * 10) / 10)
 }

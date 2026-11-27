@@ -1,4 +1,5 @@
 import { ChevronRight, ExternalLink } from 'lucide-react'
+import { EvidenceTag } from './EvidenceTag'
 import { displayValue, formatAccessDate, insightsFor, snippetLine } from '@/lib/insights'
 
 /**
@@ -11,8 +12,11 @@ export function CompetitorPanel({ sku }: { sku?: string }) {
   if (products.length === 0 && explore.length === 0) return null
   const anyEstimate = products.some((p) => Object.values(p.sources).some((s) => s.estimate))
   return (
-    <section data-testid="competitor-panel" className="p-5">
-      <h2 className="mb-2 font-display text-base font-bold">Market context</h2>
+    <section data-testid="competitor-panel" className="rounded-2xl bg-surface p-5 ring-1 ring-line">
+      <h3 className="mb-2 flex items-center gap-2 font-display text-base font-bold">
+        Market context
+        <EvidenceTag kind="reference" />
+      </h3>
       <ul className="divide-y divide-line text-sm">
         {products.map((p) => {
           const first = Object.values(p.sources)[0]

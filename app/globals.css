@@ -140,3 +140,233 @@ p {
   outline: 2px solid var(--focus-ring, var(--color-green));
   outline-offset: 2px;
 }
+
+/* ---------- Dashboard redesign (ADR 0012): motion tokens and motion rules ---------- */
+:root {
+  --motion-fast: 150ms;
+  --motion-base: 250ms;
+  --motion-data: 600ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Bars grow from the baseline (columns) or from the left (rows); a data change moves from the old shape. */
+.grow-col {
+  transition: height 400ms var(--ease-in-out);
+}
+.grow-row {
+  transition: width 400ms var(--ease-in-out);
+}
+
+/* Sections fade up 8 px on load, staggered by row (set with --i), each once. Hidden only once the
+   script has marked them, so without JavaScript every section shows. */
+.reveal {
+  transition:
+    opacity var(--motion-base) var(--ease-out),
+    transform var(--motion-base) var(--ease-out);
+  transition-delay: calc(min(var(--i, 0), 6) * 40ms);
+}
+.reveal[data-shown='false'] {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+/* A number that changed on refresh: green tint for an increase, fading back over 800 ms. */
+.num-up {
+  animation: num-up 800ms var(--ease-out) both;
+}
+@keyframes num-up {
+  0% {
+    color: var(--color-green);
+  }
+  100% {
+    color: inherit;
+  }
+}
+
+/* Live dot: one pulse per new scan. */
+.dot-pulse {
+  animation: dot-pulse 600ms var(--ease-out);
+}
+@keyframes dot-pulse {
+  50% {
+    transform: scale(1.4);
+  }
+}
+
+/* Scans card outline on a live scan, fading over 1 s. */
+.card-ping {
+  animation: card-ping 1s var(--ease-out) both;
+}
+@keyframes card-ping {
+  0% {
+    box-shadow: 0 0 0 1px var(--color-green);
+  }
+  100% {
+    box-shadow: 0 0 0 1px rgb(15 110 86 / 0);
+  }
+}
+
+/* Filter change: a thin progress line on top of the cards it affects. */
+.progress-line {
+  background: linear-gradient(90deg, transparent, var(--color-green), transparent);
+  background-size: 50% 100%;
+  background-repeat: no-repeat;
+  animation: progress-line 300ms linear infinite;
+}
+@keyframes progress-line {
+  from {
+    background-position: -50% 0;
+  }
+  to {
+    background-position: 150% 0;
+  }
+}
+
+/* Skeleton shimmer, slow, stopped under reduced motion. */
+.skeleton {
+  background: linear-gradient(90deg, var(--color-canvas) 25%, #f6f8f5 50%, var(--color-canvas) 75%);
+  background-size: 200% 100%;
+  animation: skeleton 1.6s linear infinite;
+}
+@keyframes skeleton {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+/* Journey connectors draw in sequence (--i), 150 ms each. */
+.draw-line {
+  transform-origin: left center;
+  animation: draw-line 150ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 150ms);
+}
+@keyframes draw-line {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Popover (How sure?): fade and scale from 96 %. */
+.pop-in {
+  animation: pop-in var(--motion-fast) var(--ease-out) both;
+  transform-origin: top right;
+}
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+/* Drawer: slides in from the right; the scrim fades in. Native <dialog>, so Escape closes it. */
+dialog.drawer {
+  margin: 0 0 0 auto;
+  height: 100dvh;
+  max-height: 100dvh;
+  width: min(30rem, 100vw);
+  max-width: 100vw;
+  transition:
+    transform var(--motion-base) var(--ease-out),
+    display var(--motion-base) allow-discrete,
+    overlay var(--motion-base) allow-discrete;
+  transform: translateX(100%);
+}
+dialog.drawer[open] {
+  transform: none;
+}
+@starting-style {
+  dialog.drawer[open] {
+    transform: translateX(100%);
+  }
+}
+dialog.drawer::backdrop {
+  background: rgb(11 43 36 / 0);
+  transition:
+    background var(--motion-base) var(--ease-out),
+    display var(--motion-base) allow-discrete,
+    overlay var(--motion-base) allow-discrete;
+}
+dialog.drawer[open]::backdrop {
+  background: rgb(11 43 36 / 0.45);
+}
+@starting-style {
+  dialog.drawer[open]::backdrop {
+    background: rgb(11 43 36 / 0);
+  }
+}
+
+/* Theme quotes and other inline expanders: height transition where supported. */
+.expand {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--motion-base) var(--ease-in-out);
+}
+.expand[data-open='true'] {
+  grid-template-rows: 1fr;
+}
+.expand > * {
+  overflow: hidden;
+}
+
+/* Section links on a phone scroll sideways without a visible scrollbar. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Empty and zero states fade in, no bounce. */
+.fade-in {
+  animation: fade-in var(--motion-base) var(--ease-out) both;
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Reduced motion: no transforms on data, only short opacity fades. Values still update. */
+@media (prefers-reduced-motion: reduce) {
+  .grow-col,
+  .grow-row,
+  .expand,
+  dialog.drawer,
+  dialog.drawer::backdrop {
+    transition: none;
+  }
+  .reveal,
+  .reveal[data-shown='false'] {
+    transform: none;
+    transition: opacity 120ms linear;
+  }
+  .num-up,
+  .dot-pulse,
+  .card-ping,
+  .progress-line,
+  .skeleton,
+  .draw-line,
+  .pop-in,
+  .bar-wipe,
+  .rise-in {
+    animation: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fade-in {
+    animation-duration: 120ms;
+  }
+}
+@media print {
+  .reveal[data-shown='false'] {
+    opacity: 1;
+    transform: none;
+  }
+}

@@ -175,3 +175,17 @@ export function buildPriceAnswer(products: CompetitorProduct[], asOf: Date): Age
   const note = anyEstimate ? ' Prices with ~ are estimates from public listings.' : ''
   return { id, question: questionText(id), answer: `Comparable dark bars: ${clauses.join('; ')}.${note}`, sources, asOf: asOf.toISOString() }
 }
+
+/**
+ * The short line shown before an answer streams in (ADR 0012): built from the answer's own sources,
+ * so it never names a count the answer did not use. "Looking at 610 scans…" or "Looking at 2 public listings…".
+ */
+export function agentStatusLine(a: Pick<AgentAnswer, 'id' | 'sources' | 'counts'>): string {
+  if (a.id === 'comparable-dark-bars') {
+    const n = a.sources.length
+    return n ? `Looking at ${formatCount(n)} public ${n === 1 ? 'listing' : 'listings'}…` : 'Looking at public listings…'
+  }
+  const unit = DATA_SOURCES[a.id].unit
+  const total = a.counts ? a.counts.live + a.counts.synthetic : null
+  return total === null ? `Looking at the ${unit}…` : `Looking at ${formatCount(total)} ${unit}…`
+}
