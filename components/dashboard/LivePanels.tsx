@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from 'react'
 import { BarChart3, Eye, Globe, MessageSquare } from 'lucide-react'
 import { DataBadge } from '@/components/DataBadge'
 import { EmptyState } from '@/components/EmptyState'
+import { EvidenceTag } from '@/components/EvidenceTag'
+import { PANEL_EVIDENCE, type LivePanelId } from '@/lib/evidence'
 import {
   badgeKind,
   campaignName,
@@ -136,7 +138,7 @@ function timeOf(iso: string) {
 
 const fmt = (n: number) => n.toLocaleString('en-GB')
 
-function Panel({ id, title, icon, kind, children }: { id: string; title: string; icon: React.ReactNode; kind: ReturnType<typeof badgeKind>; children: React.ReactNode }) {
+function Panel({ id, title, icon, kind, children }: { id: LivePanelId; title: string; icon: React.ReactNode; kind: ReturnType<typeof badgeKind>; children: React.ReactNode }) {
   return (
     <section data-testid={id} className="flex flex-col gap-4 rounded-2xl bg-surface p-5 ring-1 ring-line md:p-6">
       <header className="flex flex-wrap items-center justify-between gap-2">
@@ -144,7 +146,10 @@ function Panel({ id, title, icon, kind, children }: { id: string; title: string;
           {icon}
           {title}
         </h2>
-        <DataBadge kind={kind} />
+        <span className="flex flex-wrap items-center gap-1.5">
+          <EvidenceTag kind={PANEL_EVIDENCE[id]} />
+          <DataBadge kind={kind} />
+        </span>
       </header>
       {children}
     </section>

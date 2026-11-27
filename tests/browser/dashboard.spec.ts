@@ -36,6 +36,20 @@ test.describe('signed in', () => {
     await expect(page.getByTestId('panel-feedback')).toContainText('bitterness')
   })
 
+  test('EV-4: panels, agent answers and ideas carry an evidence tag; legend lists four', async ({ page }) => {
+    await page.goto('/dashboard?ask=feedback-visits-by-campaign')
+    const expected = { 'panel-scans': 'observed', 'panel-page-views': 'observed', 'panel-feedback': 'observed', 'panel-web': 'attributed' }
+    for (const [id, kind] of Object.entries(expected)) {
+      const tag = page.getByTestId(id).getByTestId('evidence-tag')
+      await expect(tag, id).toHaveCount(1)
+      await expect(tag, id).toHaveAttribute('data-evidence', kind)
+    }
+    await expect(page.getByTestId('agent-answer').getByTestId('evidence-tag')).toHaveAttribute('data-evidence', 'attributed')
+    await expect(page.getByTestId('hypotheses-panel').getByTestId('evidence-tag')).toHaveAttribute('data-evidence', 'correlation')
+    await page.getByText('How sure is each number?').click()
+    await expect(page.getByTestId('evidence-legend-item')).toHaveCount(4)
+  })
+
   test('DS-5: data sources panel labels every source and Request opens the pilot note', async ({ page }) => {
     for (const path of ['/dashboard', '/dashboard?view=collection&id=vegan-creamy']) {
       await page.goto(path)

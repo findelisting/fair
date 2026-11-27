@@ -2,6 +2,8 @@ import { Bot } from 'lucide-react'
 import { QUESTIONS, isQuestionId, type AgentAnswer, type QuestionId } from '@/lib/agent'
 import { getAnswer } from '@/lib/agentData'
 import { cn } from '@/lib/utils'
+import { QUESTION_EVIDENCE } from '@/lib/evidence'
+import { EvidenceTag } from './EvidenceTag'
 import { SourceList } from './SourceList'
 
 // Product agent panel (ADR 0006). Server Component: questions are links, the answer renders on the
@@ -55,7 +57,10 @@ export async function AgentPanel({ ask, hrefFor }: Props) {
 
       {id && (
         <div data-testid="agent-answer" className="rise-in flex flex-col gap-2 rounded-xl bg-surface p-5 text-ink">
-          <h3 className="text-sm font-semibold text-ink-secondary">{QUESTIONS.find((q) => q.id === id)!.question}</h3>
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <h3 className="text-sm font-semibold text-ink-secondary">{QUESTIONS.find((q) => q.id === id)!.question}</h3>
+            {!failed && <EvidenceTag kind={QUESTION_EVIDENCE[id]} className="shrink-0" />}
+          </div>
           <p data-testid="agent-answer-text" className="font-display text-lg font-semibold leading-snug">
             {failed ? 'The answer is not available right now. Please try again in a moment.' : answer?.answer}
           </p>

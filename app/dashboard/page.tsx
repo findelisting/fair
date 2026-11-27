@@ -3,6 +3,7 @@ import { ArrowLeft, Plug, QrCode } from 'lucide-react'
 import { AgentPanel } from '@/components/AgentPanel'
 import { CompetitorPanel } from '@/components/CompetitorPanel'
 import { DataSourcesPanel } from '@/components/DataSourcesPanel'
+import { EvidenceLegend } from '@/components/EvidenceLegend'
 import { HypothesesPanel } from '@/components/HypothesesPanel'
 import { PackagingPanel } from '@/components/PackagingPanel'
 import { InsightCheck } from '@/components/dashboard/InsightCheck'
@@ -82,6 +83,8 @@ export default async function Dashboard({ searchParams }: { searchParams: SP }) 
           QR codes
         </Link>
       </form>
+
+      <EvidenceLegend />
 
       <LivePanels key={query} query={query} view={params.view} initial={initial} collectionId={isProduct ? undefined : params.id} />
 

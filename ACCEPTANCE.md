@@ -30,3 +30,4 @@ Each criterion from SPEC.md section 6 (and CLAUDE.md), how it is met, and how to
 | Item | How it is met | Status |
 |---|---|---|
 | Data sources panel: what feeds the dashboard and what a pilot could connect (ADR 0009) | Static list in `lib/dataSources.ts`; each available source is labelled "Demo: not connected"; "Request" opens a note, nothing is stored or sent | Done; `tests/unit/dataSources.spec.ts`, `tests/browser/dashboard.spec.ts` (DS-5) |
+| Evidence tags: each panel, agent answer and idea says whether it is observed, attributed, a correlation or a public reference (ADR 0010) | Fixed mapping in `lib/evidence.ts`; outline tag next to the Live / Synthetic data badge; legend "How sure is each number?" | Done; `tests/unit/evidence.spec.ts`, `tests/browser/dashboard.spec.ts` (EV-4) |
