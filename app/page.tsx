@@ -69,8 +69,8 @@ export default function Home() {
               or campaign.
             </p>
           </Step>
-          <Step n={4} icon={<Sparkles aria-hidden className="h-5 w-5" />} title="Ask the product agent" last>
-            <p>Pick a prepared question. Every answer lists the data it used, with dates.</p>
+          <Step n={4} icon={<Sparkles aria-hidden className="h-5 w-5" />} title="Hear from the product agent" last>
+            <p>The product reports from its own memory of scans, visits and feedback. Every answer lists the data it used, with dates.</p>
           </Step>
         </ol>
       </section>

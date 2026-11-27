@@ -1,4 +1,4 @@
-import { Bot } from 'lucide-react'
+import { Package } from 'lucide-react'
 import { QUESTIONS, isQuestionId, type AgentAnswer, type QuestionId } from '@/lib/agent'
 import { getAnswer } from '@/lib/agentData'
 import { cn } from '@/lib/utils'
@@ -33,10 +33,13 @@ export async function AgentPanel({ ask, hrefFor }: Props) {
     <section data-testid="agent-panel" className="flex flex-col gap-4 rounded-2xl bg-night p-5 text-ivory [--focus-ring:var(--color-gold)] md:p-6">
       <header className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 font-display text-xl font-bold">
-          <Bot aria-hidden className="h-5 w-5 text-gold" />
-          Ask the product agent
+          <Package aria-hidden className="h-5 w-5 text-gold" />
+          Product agent
         </h2>
-        <p className="text-xs text-mist">Answers are counted from the data, with sources. No external AI.</p>
+        <p className="max-w-xl text-xs text-mist">
+          Works from each product&apos;s memory: every scan, visit and feedback answer, across markets and campaigns. Answers are
+          counted from that data, with sources. No external AI; it makes no claims and changes nothing.
+        </p>
       </header>
       <ul className="grid gap-2 md:grid-cols-2">
         {QUESTIONS.map((q) => (
