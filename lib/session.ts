@@ -46,9 +46,23 @@ export async function passwordMatches(input: string, expected: string | undefine
   return sameBytes(await hmac(key, input), await hmac(key, expected))
 }
 
-/** Where to go after sign-in: same-site paths only. */
+/**
+ * Where to go after sign-in: same-site paths only.
+ * Control characters are refused outright: the URL parser drops tab and newline,
+ * so "/\t/evil.example" would otherwise become the protocol-relative "//evil.example".
+ * As a second check, the path must resolve to the same origin.
+ */
 export function safeNext(next: string | null | undefined): string {
-  if (!next || !next.startsWith('/') || next.startsWith('//') || next.startsWith('/\\')) return '/dashboard'
+  const fallback = '/dashboard'
+  // eslint-disable-next-line no-control-regex
+  if (!next || /[\u0000-\u001F\u007F]/.test(next)) return fallback
+  if (!next.startsWith('/') || next.startsWith('//') || next.startsWith('/\\')) return fallback
+  const base = 'https://same-origin.invalid'
+  try {
+    if (new URL(next, base).origin !== base) return fallback
+  } catch {
+    return fallback
+  }
   return next
 }
 

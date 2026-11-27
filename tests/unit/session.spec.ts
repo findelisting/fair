@@ -41,3 +41,10 @@ test('G-5: only same-site paths are followed after sign-in', () => {
     expect(safeNext(bad as string)).toBe('/dashboard')
   }
 })
+
+test('G-5b: tabs, newlines and other control characters cannot smuggle in a second slash', () => {
+  // The URL parser drops tab and newline, so "/\t/evil.example" would resolve to https://evil.example/.
+  for (const bad of ['/\t/evil.example', '/\n/evil.example', '/\r/evil.example', '\t//evil.example', '/\u0000/evil.example', '/\t\\evil.example']) {
+    expect(safeNext(bad)).toBe('/dashboard')
+  }
+})
